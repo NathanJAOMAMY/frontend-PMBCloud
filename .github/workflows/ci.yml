@@ -30,28 +30,68 @@ jobs:
           echo "Error: package.json not found!"
           exit 1
         fi
-        echo "package.json found."
+        if [ ! -f ./vite.config.js ]; then
+          echo "Warning: vite.config.js not found"
+        fi
+        echo "Project structure validated."
+
+    - name: Build application
+      run: |
+        npm run build
+        echo "Build completed successfully."
+
     - name: Test Docker build
       run: |
-        docker build -t pmbcloud-test .
+        docker build -t pmbcloud-frontend -f Dockerfile .
         echo "Docker build successful."
+
+        # Tester l'image rapidement
+        docker run -d --name test-frontend -p 8080:8080 pmbcloud-frontend
+        sleep 5
+        
+        # Vérifier que le conteneur fonctionne
+        if docker ps | grep test-frontend; then
+          echo "Docker container running successfully"
+          docker stop test-frontend
+          docker rm test-frontend
+        else
+          echo "Docker container failed to start"
+          exit 1
+        fi
 
     - name: Security audit dependencies
       run: |
-        npm audit --audit-level=high
-        npx npm-audit-html --output audit-report.html
-      continue-on-error: true
+        # Audit npm
+        npm audit --audit-level=high || echo "Audit completed with warnings"
+        
+        # Générer un rapport si des vulnérabilités sont trouvées
+        if [ -f "package-lock.json" ]; then
+          npx npm-audit-html --output audit-report.html || true
+        fi
 
     - name: Check for exposed secrets
       run: |
         # Chercher des clés API dans le code frontend
-        if grep -r "SUPABASE_KEY" ./src --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx"; then
-        echo "ERROR: Supabase key found in frontend code"
-        exit 1
+        echo "Checking for exposed secrets..."
+        
+        # Liste des patterns de secrets à rechercher
+        SECRET_PATTERNS="SUPABASE_KEY\|SUPABASE_ANON_KEY\|JWT_SECRET\|MONGO_URI\|API_KEY\|SECRET"
+        
+        # Rechercher dans les fichiers source
+        if grep -r "$SECRET_PATTERNS" ./src --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" 2>/dev/null; then
+          echo "ERROR: Secrets found in frontend source code!"
+          exit 1
         fi
-        echo "No secrets exposed in frontend code"
+        
+        # Rechercher dans les fichiers de configuration
+        if grep -r "$SECRET_PATTERNS" . --include="*.json" --include="*.js" --exclude-dir=node_modules --exclude=package.json 2>/dev/null; then
+          echo "ERROR: Secrets found in configuration files!"
+          exit 1
+        fi
+        
+        echo "No secrets exposed in frontend code ✓"
     
-    - name: Lighthouse CI
+    - name: Run Lighthouse CI
       uses: treosh/lighthouse-ci-action@v11
       with:
         configPath: './lighthouserc.json'
