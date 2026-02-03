@@ -21,18 +21,13 @@ COPY . .
 
 # Variables d'environnement pour le build
 ARG VITE_API_BASE_URL=http://localhost:3001
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_KEY
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
-ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-ENV VITE_SUPABASE_KEY=${VITE_SUPABASE_KEY}
 
 # Builder l'application
 RUN npm run build
 
 # Nettoyage des fichiers inutiles
-RUN find /app/dist -name "*.map" -delete && \
-    rm -rf /app/node_modules
+RUN find /app/dist -name "*.map" -delete
 
 # Stage 2: Production
 FROM nginxinc/nginx-unprivileged:alpine
@@ -40,15 +35,8 @@ FROM nginxinc/nginx-unprivileged:alpine
 # Installation de curl pour health check (en tant que root temporairement)
 USER root
 RUN apk add --no-cache curl && \
-    # Créer un script de health check simple
-    echo '#!/bin/sh' > /docker-healthcheck.sh && \
-    echo 'curl -f -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -q "200\|301\|302\|304"' >> /docker-healthcheck.sh && \
-    chmod +x /docker-healthcheck.sh && \
     # Nettoyer le cache
     rm -rf /var/cache/apk/*
-
-# Retour à l'utilisateur non-root
-USER nginx
 
 # Copier les fichiers buildés
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
@@ -56,16 +44,16 @@ COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 # Copier la configuration nginx sécurisée
 COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
 
-# Vérifier que nginx.conf existe
-RUN test -f /etc/nginx/nginx.conf || (echo "nginx.conf manquant!" && exit 1)
-
 # S'assurer que les permissions sont correctes
 RUN chmod -R 755 /usr/share/nginx/html && \
     chmod 644 /usr/share/nginx/html/index.html
 
+# Retour à l'utilisateur non privilégié
+USER nginx
+
 # Health check (utilise le script créé)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD /docker-healthcheck.sh
+  CMD curl -f http://localhost:8080/ || exit 1
 
 EXPOSE 8080
 
