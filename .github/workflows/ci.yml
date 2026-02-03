@@ -35,3 +35,30 @@ jobs:
       run: |
         docker build -t pmbcloud-test .
         echo "Docker build successful."
+
+    - name: Security audit dependencies
+      run: |
+        npm audit --audit-level=high
+        npx npm-audit-html --output audit-report.html
+      continue-on-error: true
+
+    - name: Check for exposed secrets
+      run: |
+        # Chercher des clés API dans le code frontend
+        if grep -r "SUPABASE_KEY" ./src --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx"; then
+        echo "ERROR: Supabase key found in frontend code"
+        exit 1
+        fi
+        echo "No secrets exposed in frontend code"
+    
+    - name: Lighthouse CI
+      uses: treosh/lighthouse-ci-action@v11
+      with:
+        configPath: './lighthouserc.json'
+        uploadArtifacts: true
+        temporaryPublicStorage: true
+
+    - name: Snyk Security Scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
