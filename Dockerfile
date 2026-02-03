@@ -12,7 +12,7 @@ RUN apk add --no-cache git
 
 # Optimisation cache - copier package.json d'abord
 COPY package*.json ./
-RUN npm ci --silent
+RUN npm ci --silent --audit=false
 
 # Copier les fichiers de configuration
 COPY vite.config.js ./
@@ -20,20 +20,35 @@ COPY tsconfig.json ./
 COPY . .
 
 # Variables d'environnement pour le build
-ARG VITE_API_BASE_URL
+ARG VITE_API_BASE_URL=http://localhost:3001
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_KEY
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
 ENV VITE_SUPABASE_KEY=${VITE_SUPABASE_KEY}
 
-# Builder l'application - VOTRE COMMANDE SPÉCIFIQUE
-RUN npm run build && \
-    # Supprimer les fichiers sourcemaps en production
-    find /app/dist -name "*.map" -delete
+# Builder l'application
+RUN npm run build
+
+# Nettoyage des fichiers inutiles
+RUN find /app/dist -name "*.map" -delete && \
+    rm -rf /app/node_modules
 
 # Stage 2: Production
 FROM nginxinc/nginx-unprivileged:alpine
+
+# Installation de curl pour health check (en tant que root temporairement)
+USER root
+RUN apk add --no-cache curl && \
+    # Créer un script de health check simple
+    echo '#!/bin/sh' > /docker-healthcheck.sh && \
+    echo 'curl -f -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -q "200\|301\|302\|304"' >> /docker-healthcheck.sh && \
+    chmod +x /docker-healthcheck.sh && \
+    # Nettoyer le cache
+    rm -rf /var/cache/apk/*
+
+# Retour à l'utilisateur non-root
+USER nginx
 
 # Créer un utilisateur non-root
 RUN addgroup -g 1001 -S appgroup && \
@@ -69,7 +84,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8080/ || exit 1
 
 EXPOSE 8080
-
-USER nginx
 
 CMD ["nginx", "-g", "daemon off;"]
