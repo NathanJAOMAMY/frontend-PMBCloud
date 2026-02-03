@@ -12,8 +12,7 @@ RUN apk add --no-cache git
 
 # Optimisation cache - copier package.json d'abord
 COPY package*.json ./
-RUN npm ci --silent --audit=false && \
-    npm audit --production --audit-level=high || true
+RUN npm ci --silent
 
 # Copier les fichiers de configuration
 COPY vite.config.js ./
@@ -21,25 +20,20 @@ COPY tsconfig.json ./
 COPY . .
 
 # Variables d'environnement pour le build
-ARG VITE_API_BASE_URL=http://localhost:3001
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ARG VITE_API_BASE_URL
 ARG VITE_SUPABASE_URL
-ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
 ARG VITE_SUPABASE_KEY
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
 ENV VITE_SUPABASE_KEY=${VITE_SUPABASE_KEY}
 
 # Builder l'application - VOTRE COMMANDE SPÉCIFIQUE
 RUN npm run build && \
     # Supprimer les fichiers sourcemaps en production
-    find /app/dist -name "*.map" -delete && \
-    # Nettoyer les fichiers inutiles
-    rm -rf /app/node_modules /app/.git /app/*.md
+    find /app/dist -name "*.map" -delete
 
 # Stage 2: Production
 FROM nginxinc/nginx-unprivileged:alpine
-
-# Installer curl pour health check
-RUN apk add --no-cache curl
 
 # Créer un utilisateur non-root
 RUN addgroup -g 1001 -S appgroup && \
