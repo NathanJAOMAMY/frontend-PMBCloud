@@ -50,38 +50,22 @@ RUN apk add --no-cache curl && \
 # Retour à l'utilisateur non-root
 USER nginx
 
-# Créer un utilisateur non-root
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -S appuser -G appgroup -u 1001
-
 # Copier les fichiers buildés
-COPY --from=builder --chown=appuser:appgroup /app/dist /usr/share/nginx/html
-
-# Copier la configuration nginx sécurisée
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copier les fichiers buildés dans le répertoire nginx
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
-# Changer les permissions
-RUN chown -R appuser:appgroup /usr/share/nginx/html && \
-    chown -R appuser:appgroup /var/cache/nginx && \
-    chown -R appuser:appgroup /var/log/nginx && \
-    chmod -R 755 /usr/share/nginx/html && \
-    chmod 644 /usr/share/nginx/html/index.html && \
-    # Supprimer les fichiers par défaut inutiles
-    rm -f /usr/share/nginx/html/50x.html
+# Copier la configuration nginx sécurisée
+COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
 
-# Sécurité: Supprimer les fichiers sensibles
-RUN rm -f /docker-entrypoint.d/* && \
-    rm -rf /var/cache/nginx/*
+# Vérifier que nginx.conf existe
+RUN test -f /etc/nginx/nginx.conf || (echo "nginx.conf manquant!" && exit 1)
 
-# Utiliser l'utilisateur non-root
-USER appuser
+# S'assurer que les permissions sont correctes
+RUN chmod -R 755 /usr/share/nginx/html && \
+    chmod 644 /usr/share/nginx/html/index.html
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/ || exit 1
+# Health check (utilise le script créé)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD /docker-healthcheck.sh
 
 EXPOSE 8080
 
