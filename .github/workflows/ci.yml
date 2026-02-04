@@ -142,4 +142,9 @@ jobs:
     - name: Snyk Security Scan
       uses: snyk/actions/node@master
       env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}    
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} 
+        
+    - name: Debug Login.tsx file
+      run: |
+        echo "Displaying Login.tsx content for debugging:"
+        sed -n '1,200p' src/pages/Login.tsx
