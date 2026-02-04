@@ -5,7 +5,7 @@ import './SocialMedia.css';
 import NewsForm from './NewsForm';
 import NewsFeed from './NewsFeed';
 import UserProfile from '../../components/UserProfile';
-import logo from '../../assets/images/logo - pmbcloud.png';
+import logo from '../../assets/images/logo-pmbcloud.png';
 import { fetchPosts } from '../../api/socialApi';
 
 const SocialMedia = () => {
