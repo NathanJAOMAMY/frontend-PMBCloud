@@ -47,8 +47,6 @@ COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
 # S'assurer que les permissions sont correctes
 RUN chmod -R 755 /usr/share/nginx/html && \
     chmod 644 /usr/share/nginx/html/index.html
-RUN mkdir -p /tmp/nginx \
- && chown -R nginx:nginx /tmp/nginx
 
 # Retour à l'utilisateur non privilégié
 USER nginx
