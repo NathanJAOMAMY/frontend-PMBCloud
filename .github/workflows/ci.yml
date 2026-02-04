@@ -111,6 +111,11 @@ jobs:
         chmod +x ./scripts/fix-lighthouse-issues.sh
         ./scripts/fix-lighthouse-issues.sh
 
+    - name: Debug Login.tsx file
+      run: |
+        echo "Displaying Login.tsx content for debugging:"
+        sed -n '1,200p' src/pages/Login.tsx
+
     - name: Build with production settings
       run: |
         npm run build
@@ -143,8 +148,3 @@ jobs:
       uses: snyk/actions/node@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} 
-        
-    - name: Debug Login.tsx file
-      run: |
-        echo "Displaying Login.tsx content for debugging:"
-        sed -n '1,200p' src/pages/Login.tsx

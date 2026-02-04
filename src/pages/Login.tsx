@@ -18,6 +18,8 @@ interface LoginResponse {
   user: User;
 }
 
+type ApiError = { message?: string; errors?: Record<string, string[]> };
+
 const Login = () => {
   const { login } = useAuth();
   const [username, setUsername] = useState<string>("");
@@ -62,7 +64,7 @@ const Login = () => {
     loginClient(username, password);
   };
 
-  type ApiError = { message?: string; errors?: Record<string, string[]> };
+  
 
   const loginClient = async (userName: string, password: string): Promise<boolean> => {
     if (!userName || !password) {
