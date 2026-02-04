@@ -137,7 +137,7 @@ const Login = () => {
           open={modalOpen}
           title="Veuillez entrer votre code d'inscription"
           handleClose={closeModal}
-          handleValidate={() => { console.log('Validé') }}
+          handleValidate={() => { /* console.log('Validé'); */ }}
         >
           <input
             type="text"
