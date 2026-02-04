@@ -120,93 +120,96 @@ const Login = () => {
   const openModal = () => setModalOpen(true);
   const closeModal = () => setModalOpen(false);
 
-  return !localStoreUser ? (
-    <div
-      className="h-screen w-screen flex items-center justify-center relative text-gray-800"
-      style={{
-        backgroundImage: `url(${bg})`,
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-
-      {/* Modal inscription */}
-      <Modal
-        open={modalOpen}
-        title="Veuillez entrer votre code d'inscription"
-        handleClose={closeModal}
-        handleValidate={() => { console.log('Validé') }}
+  if (!localStoreUser) {
+    return (
+      <div
+        className="h-screen w-screen flex items-center justify-center relative text-gray-800"
+        style={{
+          backgroundImage: `url(${bg})`,
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       >
-        <input
-          type="text"
-          className="w-full mb-2 border-2 border-primary rounded-md py-2 px-3 transition focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </Modal>
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
-      {/* Formulaire */}
-      <div className="relative z-10 w-full max-w-md p-8 bg-white backdrop-blur-md rounded-xl shadow-xl flex flex-col items-center">
-        <img src={logo} alt="Logo promabio" className="w-48 mb-6" />
+        {/* Modal inscription */}
+        <Modal
+          open={modalOpen}
+          title="Veuillez entrer votre code d'inscription"
+          handleClose={closeModal}
+          handleValidate={() => { console.log('Validé') }}
+        >
+          <input
+            type="text"
+            className="w-full mb-2 border-2 border-primary rounded-md py-2 px-3 transition focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </Modal>
 
-        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-          <div>
-            <label htmlFor="username" className="block font-semibold text-gray-700 mb-1">
-              Nom ou email
-            </label>
-            <input
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full transition border-2 border-primary px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Entrez votre identifiant"
-              autoComplete="username"
-            />
-          </div>
+        {/* Formulaire */}
+        <div className="relative z-10 w-full max-w-md p-8 bg-white backdrop-blur-md rounded-xl shadow-xl flex flex-col items-center">
+          <img src={logo} alt="Logo promabio" className="w-48 mb-6" />
 
-          <div>
-            <label htmlFor="password" className="block font-semibold text-gray-800 mb-1">
-              Mot de passe
-            </label>
-            <div className="relative w-full">
+          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+            <div>
+              <label htmlFor="username" className="block font-semibold text-gray-700 mb-1">
+                Nom ou email
+              </label>
               <input
-                id="password"
-                type={show ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full transition px-4 py-2 rounded-lg border-2 border-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Entrez votre mot de passe"
-                autoComplete="current-password"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full transition border-2 border-primary px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Entrez votre identifiant"
+                autoComplete="username"
               />
-              <span
-                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10 text-primary"
-                onClick={() => setShow(!show)}
-              >
-                {show ? <FiEyeOff size={20} /> : <FiEye size={20} />}
-              </span>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-3 mt-2">
-            <Button
-              handleSubmit={handleSubmit}
-              htmlType="submit"
-              title={isLoading ? "Connexion..." : "Se connecter"} // 🔹 change le texte
-              type="success"
-            />
-          </div>
-        </form>
+            <div>
+              <label htmlFor="password" className="block font-semibold text-gray-800 mb-1">
+                Mot de passe
+              </label>
+              <div className="relative w-full">
+                <input
+                  id="password"
+                  type={show ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full transition px-4 py-2 rounded-lg border-2 border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Entrez votre mot de passe"
+                  autoComplete="current-password"
+                />
+                <span
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10 text-primary"
+                  onClick={() => setShow(!show)}
+                >
+                  {show ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                </span>
+              </div>
+            </div>
 
-        {/* Loader en overlay */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center rounded-xl">
-            <FiLoader className="animate-spin text-primary" size={40} />
-            <span className="mt-2 text-gray-700 font-medium">Connexion en cours...</span>
-          </div>
-        )}
+            <div className="flex flex-col gap-3 mt-2">
+              <Button
+                handleSubmit={handleSubmit}
+                htmlType="submit"
+                title={isLoading ? "Connexion..." : "Se connecter"} // 🔹 change le texte
+                type="success"
+              />
+            </div>
+          </form>
+
+          {/* Loader en overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center rounded-xl">
+              <FiLoader className="animate-spin text-primary" size={40} />
+              <span className="mt-2 text-gray-700 font-medium">Connexion en cours...</span>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  ) : (
+    );
+  }
+  return (
     <div className="flex flex-col items-center justify-center h-screen gap-3 text-gray-700">
       <FiLoader className="animate-spin text-primary" size={40} />
       <span className="text-lg font-medium">Connexion en cours...</span>
