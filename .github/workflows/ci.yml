@@ -47,26 +47,31 @@ jobs:
 
         # Tester l'image rapidement
         docker run -d --name test-frontend -p 8080:8080 pmbcloud-frontend
-        sleep 10
+        sleep 15
         
         # Vérifier que le conteneur fonctionne
-        if ! docker ps | grep test-frontend; then
-          echo "Docker container running successfully"
-          docker logs test-frontend || true
-          docker rm test-frontend
-          exit 1
-        fi
-
-        # Vérifier que le service répond
-        if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 | grep -q "200\|301\|302"; then
-          echo "Docker container running and responding successfully"
-          docker stop test-frontend
-          docker rm test-frontend
+        if docker ps | grep -q test-frontend; then
+          echo "Docker container is running"
+          
+          # Vérifier les logs pour détecter les erreurs
+          echo "Container logs:"
+          docker logs test-frontend --tail 20 || true
+          
+          # Vérifier que le service répond
+          if curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080 | grep -q "200\|301\|302"; then
+            echo "✓ Container responding on port 8080"
+            docker stop test-frontend
+            docker rm test-frontend
+          else
+            echo "✗ Container not responding on port 8080"
+            docker logs test-frontend || true
+            docker stop test-frontend || true
+            docker rm test-frontend || true
+            exit 1
+          fi
         else
-          echo "Container started but not responding properly"
-          docker logs test-frontend || true
-          docker stop test-frontend || true
-          docker rm test-frontend || true
+          echo "✗ Docker container failed to start"
+          docker logs test-frontend 2>/dev/null || echo "No logs available"
           exit 1
         fi
 

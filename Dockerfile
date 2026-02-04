@@ -45,8 +45,14 @@ COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
 
 # S'assurer que les permissions sont correctes
-RUN chmod -R 755 /usr/share/nginx/html && \
-    chmod 644 /usr/share/nginx/html/index.html
+
+RUN chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    chmod -R 755 /var/cache/nginx && \
+    chmod -R 755 /var/log/nginx && \
+    touch /var/run/nginx.pid && \
+    chown nginx:nginx /var/run/nginx.pid
 
 # Retour à l'utilisateur non privilégié
 USER nginx
