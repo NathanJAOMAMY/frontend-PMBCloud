@@ -186,7 +186,6 @@ const Login = () => {
 
             <div className="flex flex-col gap-3 mt-2">
               <Button
-                handleSubmit={handleSubmit}
                 htmlType="submit"
                 title={isLoading ? "Connexion..." : "Se connecter"}
                 type="success"
