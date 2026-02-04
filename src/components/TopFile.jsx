@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import logo from '../assets/images/logo - pmbcloud.png';
+import logo from '../assets/images/logo-pmbcloud.png';
 import { Icon } from "@iconify/react";
 import { useAuth } from '../context/AuthContext';
 import { NavLink } from 'react-router-dom';
@@ -8,7 +8,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../api';
 import { useDispatch } from 'react-redux';
 import { setCurrentUser } from '../redux/features/user/user';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { FiEdit, FiLogOut, FiSearch, FiXCircle } from 'react-icons/fi';
 
 const TopFile = () => {
@@ -16,7 +16,6 @@ const TopFile = () => {
   const userInfo = JSON.parse(localStoreUser);
   const [infoClient, setInfoClient] = useState(false);
   const dispatch = useDispatch();
-  const [searchTerm, setSearchTerm] = useState("");
 
   const { logout } = useAuth();
   const [showModal, setShowModal] = useState(false);
