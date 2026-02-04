@@ -1,6 +1,6 @@
 import { useEffect, useState, FormEvent } from "react";
 import bg from "../assets/images/bg-login.jpeg";
-import logo from "../assets/images/logo-promabio.png";
+import logo from "../assets/images/logo-pmbcloud.png";
 import { Button, Modal } from "../components/Utils";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
