@@ -1,8 +1,6 @@
 import { useEffect, useState, FormEvent } from "react";
-//@ts-expect-error
 import bg from "../assets/images/bg-login.jpeg";
-//@ts-expect-error
-import logo from "../assets/images/logo - pmbcloud.png";
+import logo from "../assets/images/logo-promabio.png";
 import { Button, Modal } from "../components/Utils";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
@@ -26,7 +24,7 @@ const Login = () => {
   const [password, setPassword] = useState<string>("");
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [show, setShow] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false); // 🔹 false par défaut
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -133,7 +131,6 @@ const Login = () => {
       >
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
-        {/* Modal inscription */}
         <Modal
           open={modalOpen}
           title="Veuillez entrer votre code d'inscription"
@@ -146,7 +143,6 @@ const Login = () => {
           />
         </Modal>
 
-        {/* Formulaire */}
         <div className="relative z-10 w-full max-w-md p-8 bg-white backdrop-blur-md rounded-xl shadow-xl flex flex-col items-center">
           <img src={logo} alt="Logo promabio" className="w-48 mb-6" />
 
@@ -192,13 +188,12 @@ const Login = () => {
               <Button
                 handleSubmit={handleSubmit}
                 htmlType="submit"
-                title={isLoading ? "Connexion..." : "Se connecter"} // 🔹 change le texte
+                title={isLoading ? "Connexion..." : "Se connecter"}
                 type="success"
               />
             </div>
           </form>
 
-          {/* Loader en overlay */}
           {isLoading && (
             <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center rounded-xl">
               <FiLoader className="animate-spin text-primary" size={40} />
