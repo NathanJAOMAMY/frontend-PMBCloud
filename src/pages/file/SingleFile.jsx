@@ -1,11 +1,11 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import fileEmpty from "../../assets/images/file empty.jpg";
 import { supabase } from "../../supabase";
-import * as XLSX from "xlsx";
+import * as XLSX from "sheetjs";
 import { API_BASE_URL } from "../../api";
 import WordViewer from "../../components/WordViewer";
 import { getFileIcon, getTypeFile } from "../../tools/fileHelpers";
@@ -127,7 +127,7 @@ const SingleFile = () => {
     setIsImageOpen(false);
   };
 
-  const getFiles = async () => {
+  const getFiles = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/file/`, {
         params: {
@@ -140,11 +140,11 @@ const SingleFile = () => {
     } catch (error) {
       console.log(error);
     }
-  };
+  }, [params.id]);
 
   useEffect(() => {
     getFiles();
-  }, []);
+  }, [getFiles]);
 
   useEffect(() => {
     console.log(fileUrl);
