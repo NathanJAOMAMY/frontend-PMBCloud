@@ -38,7 +38,10 @@
     "preview": "vite preview",
     "start": "tsc -b && vite build && vite preview --host",
     "pack": "electron-builder --dir",
-    "desktop": "electron-builder"
+    "desktop": "electron-builder",
+    "serve:csp": "node scripts/serve-csp.js",
+    "fix-lighthouse-issues": "bash scripts/fix-lighthouse-issues.sh",
+    "lhci:custom": "npm run build && npm run serve:csp & lhci autorun --config=lighthouserc.json && pkill -f 'node scripts/serve-csp.js'"
   },
   "dependencies": {
     "@emnapi/core": "^1.4.5",
@@ -69,7 +72,8 @@
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.0.14",
     "uuid": "^11.1.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "serve": "^14.2.0"
   },
   "devDependencies": {
     "@lhci/cli": "^0.13.0",
