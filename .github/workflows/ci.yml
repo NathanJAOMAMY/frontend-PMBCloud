@@ -142,7 +142,10 @@ jobs:
         configPath: './lighthouserc.json'
         uploadArtifacts: true
         temporaryPublicStorage: true
-        runs: 1
+        runs: 3
+        startServerCommand: "docker run -d --name lighthouse-test -p 8080:8080 pmbcloud-frontend"
+        startServerReadyPattern: "accepting connections"
+        startServerReadyTimeout: 60000
 
     - name: Snyk Security Scan
       uses: snyk/actions/node@master

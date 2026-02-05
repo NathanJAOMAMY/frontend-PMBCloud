@@ -61,21 +61,21 @@ if [ -f "nginx.conf" ]; then
   # Insérer après X-XSS-Protection
   if grep -q "X-XSS-Protection" nginx.conf; then
     sed -i "/X-XSS-Protection/a\\$CSP_LINE" nginx.conf
-    echo "✓ CSP added after X-XSS-Protection"
+    echo " CSP added after X-XSS-Protection"
   else
     # Sinon, ajouter dans la section http
     sed -i '/http {/a\\'"$CSP_LINE" nginx.conf
-    echo "✓ CSP added to http section"
+    echo " CSP added to http section"
   fi
   
-  echo "✓ nginx.conf updated"
+  echo " nginx.conf updated"
   
   # Afficher la CSP ajoutée pour vérification
   echo "=== Updated CSP ==="
   grep -A1 "Content-Security-Policy" nginx.conf
   
 else
-  echo "⚠️ nginx.conf not found"
+  echo " nginx.conf not found"
   
   # Créer un nginx.conf minimal si non existant
   cat > nginx.conf << 'EOF'
@@ -116,7 +116,7 @@ http {
     }
 }
 EOF
-  echo "✓ nginx.conf created with CSP"
+  echo " nginx.conf created with CSP"
 fi
 
 echo "=== Creating .env.production ==="
@@ -129,16 +129,16 @@ VITE_SUPABASE_URL=your_url_here
 VITE_SUPABASE_ANON_KEY=your_key_here
 VITE_APP_VERSION=1.0.0
 EOF
-  echo "✓ .env.production created"
+  echo " .env.production created"
 else
-  echo "✓ .env.production already exists"
+  echo " .env.production already exists"
 fi
 
 echo "=== Summary ==="
-echo "✓ Console logs cleaned"
-echo "✓ Production logger created"
-echo "✓ nginx.conf updated with optimal CSP"
-echo "✓ .env.production ready"
+echo " Console logs cleaned"
+echo " Production logger created"
+echo " nginx.conf updated with optimal CSP"
+echo " .env.production ready"
 echo ""
 echo "Next steps:"
 echo "1. Rebuild: npm run build"
