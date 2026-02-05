@@ -34,11 +34,14 @@
     "lhci:healthcheck": "lhci healthcheck",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "tsc -b && vite build --config vite.config.production.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "tsc -b && vite build && vite preview --host",
     "pack": "electron-builder --dir",
     "desktop": "electron-builder",
+    "lhci:test": "npm run build:prod && node scripts/inject-csp.js && npx serve -s dist -l 8080 --cors --config=./serve-config.json & sleep 15 && lhci autorun --config=lighthouserc.json && pkill -f 'serve'",
+    "lhci:ci": "npm run build:prod && node scripts/inject-csp.js && npx @lhci/cli autorun --config=./lighthouserc.json",
     "serve:csp": "node scripts/serve-csp.js",
     "fix-lighthouse-issues": "bash scripts/fix-lighthouse-issues.sh",
     "lhci:custom": "npm run build && npm run serve:csp & lhci autorun --config=lighthouserc.json && pkill -f 'node scripts/serve-csp.js'"
@@ -89,7 +92,9 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
     "typescript": "^5.8.3",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "babel-plugin-transform-remove-console": "^6.9.4",
+    "vite-plugin-remove-console": "^1.3.0"
   },
   "overrides": {
     "glob": "^9.0.0",
