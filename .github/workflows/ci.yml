@@ -48,48 +48,50 @@ jobs:
         docker tag pmbcloud-frontend:latest pmbcloud-frontend:${{ github.sha }}
         echo "Docker build successful."
 
-    - name: Create SARIF file and run security scan
+    - name: Create SARIF file and run security scan (write to workspace)
       run: |
-        # Create empty SARIF file first
-        cat > trivy-results.sarif << 'SARIF'
+        # Ensure we write to the repository workspace explicitly
+        SARIF_PATH="$GITHUB_WORKSPACE/trivy-results.sarif"
+
+        # Create an empty SARIF scaffold at the absolute workspace path
+        cat > "$SARIF_PATH" << 'SARIF'
         {
           "version": "2.1.0",
           "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
           "runs": []
         }
         SARIF
-        
-        echo "✓ SARIF file created at: $(pwd)/trivy-results.sarif"
-        ls -la trivy-results.sarif
-        
-        # Try to install and run Trivy (optional)
+
+        echo "✓ SARIF scaffold created at: $SARIF_PATH"
+        ls -la "$SARIF_PATH" || true
+
+        # Try to install and run Trivy (non-fatal)
         echo "Attempting to install Trivy..."
         sudo wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key 2>/dev/null | sudo apt-key add - 2>/dev/null || true
         echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list 2>/dev/null || true
         sudo apt-get update 2>/dev/null || true
         sudo apt-get install -y trivy 2>/dev/null || echo "Trivy installation skipped"
-        
-        # Try to scan if Trivy is available
+
+        # Run Trivy into the absolute path if available
         if command -v trivy &> /dev/null; then
-          echo "Running Trivy scan..."
-          trivy image --format sarif --output trivy-results.sarif --severity CRITICAL,HIGH pmbcloud-frontend:latest 2>/dev/null || echo "Trivy scan failed, using empty SARIF"
+          echo "Running Trivy scan into $SARIF_PATH..."
+          trivy image --format sarif --output "$SARIF_PATH" --severity CRITICAL,HIGH pmbcloud-frontend:latest 2>/dev/null || echo "Trivy scan failed; SARIF scaffold remains"
         else
-          echo "Trivy not available, using empty SARIF report"
+          echo "Trivy not available; leaving SARIF scaffold"
         fi
-        
+
         # Final verification
         echo "Final check:"
-        ls -la trivy-results.sarif
-        pwd
+        ls -la "$SARIF_PATH"
+        echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
 
-    - name: Debug - Check SARIF file
+    - name: Debug - Check SARIF file in workspace
       if: always()
       run: |
-        echo "Current directory: $(pwd)"
-        echo "Files in current directory:"
-        ls -la *.sarif 2>/dev/null || echo "No SARIF files found"
-        echo "Checking home directory:"
-        ls -la ~/*.sarif 2>/dev/null || echo "No SARIF files in home"
+        echo "Listing SARIF files in workspace: $GITHUB_WORKSPACE"
+        ls -la "$GITHUB_WORKSPACE"/*.sarif 2>/dev/null || echo "No SARIF files found in workspace"
+        echo "Show SARIF head (if exists):"
+        head -n 100 "$GITHUB_WORKSPACE"/trivy-results.sarif 2>/dev/null || echo "trivy-results.sarif not readable"
 
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v4
