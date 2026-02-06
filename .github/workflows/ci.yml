@@ -61,7 +61,7 @@ jobs:
         echo "✓ Trivy scan completed"
 
     - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
@@ -203,12 +203,12 @@ jobs:
         kill $SERVER_PID 2>/dev/null || true
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: 'javascript'
 
     - name: Run CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
 
     - name: Run Snyk Security Scan (if token available)
       uses: snyk/actions/node@master
