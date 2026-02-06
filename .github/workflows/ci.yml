@@ -59,7 +59,8 @@ jobs:
         }
         SARIF
         
-        echo "✓ SARIF file created"
+        echo "✓ SARIF file created at: $(pwd)/trivy-results.sarif"
+        ls -la trivy-results.sarif
         
         # Try to install and run Trivy (optional)
         echo "Attempting to install Trivy..."
@@ -76,14 +77,25 @@ jobs:
           echo "Trivy not available, using empty SARIF report"
         fi
         
-        # Verify file exists
+        # Final verification
+        echo "Final check:"
         ls -la trivy-results.sarif
+        pwd
+
+    - name: Debug - Check SARIF file
+      if: always()
+      run: |
+        echo "Current directory: $(pwd)"
+        echo "Files in current directory:"
+        ls -la *.sarif 2>/dev/null || echo "No SARIF files found"
+        echo "Checking home directory:"
+        ls -la ~/*.sarif 2>/dev/null || echo "No SARIF files in home"
 
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v4
       if: always()
       with:
-        sarif_file: 'trivy-results.sarif'
+        sarif_file: '${{ github.workspace }}/trivy-results.sarif'
 
     - name: Generate SBOM with Syft
       uses: anchore/sbom-action@v0
