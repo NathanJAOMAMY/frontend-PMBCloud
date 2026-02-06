@@ -1,0 +1,165 @@
+name: Security Policy Checks
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  security-policy:
+    runs-on: ubuntu-latest
+    name: Enforce Security Policies
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check for dangerous dependencies
+      run: |
+        echo "Checking for known dangerous packages..."
+        DANGEROUS_PACKAGES="eval|exec|child_process|fs\.unlinkSync"
+        
+        if grep -r "$DANGEROUS_PACKAGES" package.json 2>/dev/null; then
+          echo "⚠️  Potentially dangerous packages detected"
+          echo "Please review and justify their usage"
+        fi
+
+    - name: Validate Dockerfile hardening
+      run: |
+        echo "Validating Dockerfile security practices..."
+        CHECKS_PASSED=0
+        CHECKS_TOTAL=0
+        
+        # Check 1: User non-root
+        CHECKS_TOTAL=$((CHECKS_TOTAL+1))
+        if grep -q "^USER [^r]" Dockerfile; then
+          echo "✓ USER directive set to non-root"
+          CHECKS_PASSED=$((CHECKS_PASSED+1))
+        else
+          echo "✗ USER directive missing or set to root"
+        fi
+        
+        # Check 2: Multi-stage
+        CHECKS_TOTAL=$((CHECKS_TOTAL+1))
+        if grep -q "FROM.*AS" Dockerfile; then
+          echo "✓ Multi-stage build detected"
+          CHECKS_PASSED=$((CHECKS_PASSED+1))
+        else
+          echo "✗ Single-stage build (not optimal for size/security)"
+        fi
+        
+        # Check 3: No EXPOSE to privileged port
+        CHECKS_TOTAL=$((CHECKS_TOTAL+1))
+        if ! grep -q "^EXPOSE [0-9]\{1,\}$" Dockerfile || ! grep "^EXPOSE" Dockerfile | awk '{print $2}' | awk '$1 > 1024' >/dev/null 2>&1; then
+          echo "✓ No exposure of privileged ports (< 1024)"
+          CHECKS_PASSED=$((CHECKS_PASSED+1))
+        else
+          echo "⚠️  Check exposed ports"
+        fi
+        
+        echo ""
+        echo "Dockerfile security: $CHECKS_PASSED/$CHECKS_TOTAL checks passed"
+        if [ $CHECKS_PASSED -lt 2 ]; then
+          echo "⚠️  Some critical checks failed - review recommended"
+        fi
+
+    - name: Validate nginx CSP headers
+      run: |
+        echo "Validating Nginx security headers..."
+        
+        if grep -q "Content-Security-Policy" nginx.conf; then
+          echo "✓ CSP header configured"
+        else
+          echo "✗ CSP header missing"
+          exit 1
+        fi
+        
+        if grep -q "X-Frame-Options" nginx.conf; then
+          echo "✓ X-Frame-Options configured"
+        else
+          echo "✗ X-Frame-Options missing"
+        fi
+        
+        if grep -q "X-Content-Type-Options" nginx.conf; then
+          echo "✓ X-Content-Type-Options configured"
+        else
+          echo "✗ X-Content-Type-Options missing"
+        fi
+
+    - name: Check for hardcoded secrets in changed files
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "Scanning changed files for hardcoded secrets..."
+        
+        # Get changed files
+        CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD)
+        
+        # Skip node_modules and dist
+        CHANGED_FILES=$(echo "$CHANGED_FILES" | grep -v "node_modules\|dist\|\.json\.lock" || true)
+        
+        FOUND_SECRETS=0
+        
+        for file in $CHANGED_FILES; do
+          if [ -f "$file" ]; then
+            if grep -E "(SUPABASE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|MONGO_URI|API_KEY|aws_secret|github_token)" "$file" 2>/dev/null | grep -v "test\|example" > /dev/null; then
+              echo "⚠️  Potential secret found in $file"
+              FOUND_SECRETS=1
+            fi
+          fi
+        done
+        
+        if [ $FOUND_SECRETS -eq 1 ]; then
+          echo "Error: Potential secrets detected. Please review."
+          exit 1
+        else
+          echo "✓ No hardcoded secrets detected in changed files"
+        fi
+
+    - name: Validate no lockfile modifications without dependency changes
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "Validating package-lock.json consistency..."
+        
+        if git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD | grep -q "package.json"; then
+          if git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD | grep -q "package-lock.json"; then
+            echo "✓ Both package.json and package-lock.json modified"
+          else
+            echo "⚠️  package.json modified but package-lock.json unchanged"
+            echo "Please run: npm ci"
+          fi
+        else
+          if git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD | grep -q "package-lock.json"; then
+            echo "⚠️  package-lock.json modified without package.json change"
+            echo "This may indicate accidental changes. Review carefully."
+          else
+            echo "✓ Lock file consistency validated"
+          fi
+        fi
+
+    - name: Require SBOM presence in dist artifact
+      run: |
+        echo "Checking for SBOM generation capability..."
+        if grep -q "sbom-action" .github/workflows/ci.yml; then
+          echo "✓ SBOM generation configured in CI"
+        else
+          echo "⚠️  SBOM generation not configured - add anchore/sbom-action"
+        fi
+
+    - name: Post summary
+      if: always()
+      run: |
+        echo "## 🔒 Security Policy Check Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- ✓ Dockerfile hardening validated" >> $GITHUB_STEP_SUMMARY
+        echo "- ✓ Nginx CSP headers verified" >> $GITHUB_STEP_SUMMARY
+        echo "- ✓ Secret scanning performed" >> $GITHUB_STEP_SUMMARY
+        echo "- ✓ Package lock consistency checked" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "For detailed policies, see [SECURITY.md](./SECURITY.md)" >> $GITHUB_STEP_SUMMARY

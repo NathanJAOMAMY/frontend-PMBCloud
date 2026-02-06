@@ -1,0 +1,26 @@
+# CODEOWNERS - Responsabilités de révision de code
+
+# Configuration Docker et déploiement - approbation DevOps requise
+Dockerfile                           @devops-team
+docker-compose.yml                   @devops-team
+.dockerignore                        @devops-team
+nginx.conf                           @devops-team
+.github/workflows/                   @devops-team
+scripts/                             @devops-team
+
+# Sécurité et secrets
+SECURITY.md                          @security-team
+.secrets.baseline                    @security-team
+.github/dependabot.yml              @security-team
+
+# Configuration générale
+package.json                         @maintainers
+package-lock.json                    @maintainers
+tsconfig.json                        @maintainers
+vite.config.js                       @maintainers
+
+# Source code
+/src/                                @developers
+
+# Tous les fichiers par défaut
+*                                    @maintainers

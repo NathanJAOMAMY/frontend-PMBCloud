@@ -16,6 +16,8 @@ server/src/data/*
 public
 .vite
 .env
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
