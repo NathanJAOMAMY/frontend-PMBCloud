@@ -49,7 +49,7 @@ jobs:
         echo "Docker build successful."
 
     - name: Scan Docker image with Trivy
-      uses: aquasec/trivy-action@master
+      uses: aquasec/trivy-action@0.23.0
       with:
         image-ref: 'pmbcloud-frontend:latest'
         format: 'sarif'
@@ -214,7 +214,7 @@ jobs:
       continue-on-error: true
 
     - name: Upload security and build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-and-build-artifacts
