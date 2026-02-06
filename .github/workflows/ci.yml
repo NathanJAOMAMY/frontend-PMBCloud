@@ -51,17 +51,17 @@ jobs:
     - name: Install and run Trivy
       run: |
         # Install Trivy
-        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
-        echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list
-        apt-get update
-        apt-get install -y trivy
+        sudo wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+        echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update
+        sudo apt-get install -y trivy
         
         # Scan Docker image
         trivy image --format sarif --output trivy-results.sarif --severity CRITICAL,HIGH pmbcloud-frontend:latest || true
         echo "✓ Trivy scan completed"
 
     - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
@@ -203,12 +203,12 @@ jobs:
         kill $SERVER_PID 2>/dev/null || true
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: 'javascript'
 
     - name: Run CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
 
     - name: Run Snyk Security Scan (if token available)
       uses: snyk/actions/node@master
