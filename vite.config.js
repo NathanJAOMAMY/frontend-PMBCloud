@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite"
 import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: './',
   plugins: [
     tailwindcss(),
@@ -55,7 +55,7 @@ export default defineConfig({
     reportCompressedSize: true,
     terserOptions: {
       compress: {
-        drop_console: (import.meta.env.MODE || 'production') === 'production',
+        drop_console: mode === 'production',
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn']
       }
@@ -70,4 +70,4 @@ export default defineConfig({
       '@supabase/supabase-js'
     ]
   }
-})
+}))
