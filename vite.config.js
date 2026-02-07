@@ -55,7 +55,7 @@ export default defineConfig({
     reportCompressedSize: true,
     terserOptions: {
       compress: {
-        drop_console: import.meta.env.MODE === 'production', 
+        drop_console: (import.meta.env.MODE || 'production') === 'production',
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn']
       }
