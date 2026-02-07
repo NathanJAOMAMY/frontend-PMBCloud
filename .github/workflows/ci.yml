@@ -103,6 +103,7 @@ jobs:
       if: always()
       with:
         sarif_file: '${{ github.workspace }}/trivy-results.sarif'
+      continue-on-error: true
 
     - name: Generate SBOM with Syft
       uses: anchore/sbom-action@v0
