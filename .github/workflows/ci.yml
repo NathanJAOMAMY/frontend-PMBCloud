@@ -98,12 +98,11 @@ jobs:
         echo "Show SARIF head (if exists):"
         head -n 100 "$GITHUB_WORKSPACE"/trivy-results.sarif 2>/dev/null || echo "trivy-results.sarif not readable"
 
-    - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v4
+    - name: Upload Trivy scan results (skipped on GitHub Free)
       if: always()
-      with:
-        sarif_file: '${{ github.workspace }}/trivy-results.sarif'
-      continue-on-error: true
+      run: |
+        echo "Skipping SARIF upload to GitHub Code Scanning (not supported on GitHub Free/private repos)."
+        echo "trivy-results.sarif is present in the workspace and will be archived as an artifact later."
 
     - name: Generate SBOM with Syft
       uses: anchore/sbom-action@v0
