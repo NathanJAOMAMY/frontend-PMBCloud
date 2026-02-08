@@ -248,6 +248,8 @@ jobs:
 
     - name: Run CodeQL Analysis
       uses: github/codeql-action/analyze@v4
+      with:
+        upload: false
 
     - name: Run Snyk Security Scan (if token available)
       uses: snyk/actions/node@master
