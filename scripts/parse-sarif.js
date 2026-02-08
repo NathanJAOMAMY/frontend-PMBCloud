@@ -1,14 +1,18 @@
 #!/usr/bin/env node
 /* eslint-env node */
-/* eslint-disable no-undef */
+/* global process */
 
 /**
  * Parse SARIF files and extract security metrics for notifications
  * Usage: node scripts/parse-sarif.js
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const SARIF_FILES = [
   'results/javascript.sarif',
@@ -109,8 +113,8 @@ function generateReport() {
 }
 
 // Run report
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   generateReport();
 }
 
-module.exports = { parseSarif, generateReport };
+export { parseSarif, generateReport };

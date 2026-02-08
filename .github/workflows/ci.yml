@@ -216,8 +216,9 @@ jobs:
         EOF
         
         echo "=== 3. Start server with CSP headers ==="
-        npx serve@latest -s dist -l 8080 --cors --config=serve-config.json &
-        SERVER_PID=$!
+        # Create serve config in dist directory
+        cp serve-config.json dist/serve-config.json 2>/dev/null || true
+        npx serve@latest -s dist -l 8080 --cors &
         
         echo "=== 4. Wait for server to start ==="
         sleep 15
