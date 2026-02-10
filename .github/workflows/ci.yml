@@ -84,6 +84,8 @@ jobs:
     strategy:
       matrix:
         node-version: [20.x]
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -118,6 +120,13 @@ jobs:
           path: |
             audit-report.html
           retention-days: 30
+
+      - name: Run Snyk Security Scan (if token available)
+        if: env.SNYK_TOKEN != ''
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
+        continue-on-error: true
 
   # ============================================================
   # STAGE 2: SAST & Container Build (Parallel)
@@ -225,7 +234,7 @@ jobs:
           
           if command -v trivy &> /dev/null; then
             echo "Running Trivy scan..."
-            trivy image --format sarif --output trivy-results.sarif --severity CRITICAL,HIGH pmbcloud-frontend:${{ github.sha }} 2>/dev/null || echo "⚠️ Trivy scan completed"
+            trivy image --format sarif --output trivy-results.sarif --severity CRITICAL,HIGH pmbcloud-frontend:${{ github.sha }} 2>/dev/null || echo " Trivy scan completed"
           else
             echo " Trivy not available; creating empty SARIF"
             cat > trivy-results.sarif <<'SARIF'
@@ -347,6 +356,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [codeql-scan, container-scan, build, security-audit]
     if: always()
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Download all artifacts
@@ -357,9 +368,9 @@ jobs:
           node scripts/parse-sarif.js
 
       - name: Notify Slack
-        if: env.SLACK_WEBHOOK != ''
+        if: env.SLACK_WEBHOOK_URL != ''
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK: ${{ env.SLACK_WEBHOOK_URL }}
         run: |
           CODEQL_ISSUES=$(jq '.runs[0].results | length' codeql-results/javascript.sarif 2>/dev/null || echo "0")
           TRIVY_ISSUES=$(jq '.runs[0].results | length' trivy-results/trivy-results.sarif 2>/dev/null || echo "0")
