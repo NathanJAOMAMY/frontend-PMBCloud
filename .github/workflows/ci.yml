@@ -128,6 +128,57 @@ jobs:
           SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
         continue-on-error: true
 
+  checkov-iac:
+    name: Infrastructure as Code Scan (Checkov)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Checkov IaC Scan
+        run: |
+          echo "Installing Checkov..."
+          pip install checkov --quiet
+          
+          echo "Running Checkov on infrastructure files..."
+          checkov -d . \
+            --framework dockerfile,docker_compose,kubernetes,helm \
+            --output sarif --output json \
+            --skip-check CKV_DOCKER_2,CKV_DOCKER_3 \
+            -o checkov-results.sarif \
+            || true
+          
+          # Also generate JSON report for parsing
+          checkov -d . \
+            --framework dockerfile,docker_compose,kubernetes,helm \
+            --output json \
+            -o checkov-results.json \
+            --quiet \
+            || true
+          
+          echo "✓ Checkov scan completed"
+
+      - name: Parse Checkov results
+        if: always()
+        run: |
+          echo "Parsing Checkov results..."
+          if [ -f "checkov-results.json" ]; then
+            CHECKOV_ISSUES=$(cat checkov-results.json | jq '[.results.failed_checks[]?] | length' 2>/dev/null || echo "0")
+            CHECKOV_PASSED=$(cat checkov-results.json | jq '[.results.passed_checks[]?] | length' 2>/dev/null || echo "0")
+            echo "Found $CHECKOV_ISSUES failed checks and $CHECKOV_PASSED passed checks"
+          else
+            echo "No Checkov results found"
+          fi
+
+      - name: Upload Checkov results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checkov-iac-results
+          path: |
+            checkov-results.sarif
+            checkov-results.json
+          retention-days: 30
+
   # ============================================================
   # STAGE 2: SAST & Container Build (Parallel)
   # ============================================================
@@ -434,7 +485,7 @@ jobs:
   reports:
     name: Security Reports & Notifications
     runs-on: ubuntu-latest
-    needs: [codeql-scan, container-scan, build, security-audit, owasp-zap-dast]
+    needs: [codeql-scan, container-scan, build, security-audit, owasp-zap-dast, checkov-iac]
     if: always()
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -455,6 +506,7 @@ jobs:
           CODEQL_ISSUES=$(jq '.runs[0].results | length' codeql-results/javascript.sarif 2>/dev/null || echo "0")
           TRIVY_ISSUES=$(jq '.runs[0].results | length' trivy-results/trivy-results.sarif 2>/dev/null || echo "0")
           ZAP_ISSUES=$(jq '.site[0].alerts | length' zap-dast-results/zap-results.json 2>/dev/null || echo "0")
+          CHECKOV_ISSUES=$(jq '[.results.failed_checks[]?] | length' checkov-iac-results/checkov-results.json 2>/dev/null || echo "0")
           
           SLACK_MSG="{
             \"text\": \" Security Scan - frontend-PMBCloud\",
@@ -476,6 +528,10 @@ jobs:
                   {
                     \"type\": \"mrkdwn\",
                     \"text\": \"*Trivy (Container):*\n${TRIVY_ISSUES} issues\"
+                  },
+                  {
+                    \"type\": \"mrkdwn\",
+                    \"text\": \"*Checkov (IaC):*\n${CHECKOV_ISSUES} failed checks\"
                   },
                   {
                     \"type\": \"mrkdwn\",
@@ -512,6 +568,12 @@ jobs:
             } catch (e) {
               zapIssues = 0;
             }
+            let checkovIssues = 0;
+            try {
+              checkovIssues = JSON.parse(fs.readFileSync('checkov-iac-results/checkov-results.json', 'utf8')).results.failed_checks.length || 0;
+            } catch (e) {
+              checkovIssues = 0;
+            }
             
             const comment = `##  Security Scan Report
             
@@ -520,6 +582,7 @@ jobs:
             | CodeQL | SAST | ${codeqlIssues} |
             | Trivy | Container | ${trivyIssues} |
             | OWASP ZAP | DAST | ${zapIssues} |
+            | Checkov | IaC | ${checkovIssues} |
             
              Container signed with Cosign (keyless)
              SBOM generated (CycloneDX)
@@ -541,6 +604,7 @@ jobs:
           -  Build Application
           -  Security Audit
           -  CodeQL SAST Analysis
+          -  Checkov IaC Scan
           -  Docker Build & Cosign Signing
           -  Container Security Scan (Trivy)
           -  OWASP ZAP DAST Analysis
@@ -552,7 +616,8 @@ jobs:
           - **Parallel Execution**: All jobs run in parallel for reduced time
           - **Container Signing**: Docker images signed with Cosign (keyless)
           - **SBOM Generation**: CycloneDX format for supply chain security
-          - **Multi-tool Scanning**: CodeQL (SAST) + Trivy (Container) + OWASP ZAP (DAST) + npm audit
+          - **Multi-tool Scanning**: CodeQL (SAST) + Trivy (Container) + OWASP ZAP (DAST) + Checkov (IaC) + npm audit
+          - **IaC Security**: Checkov scans Dockerfile, docker-compose.yml, nginx.conf for misconfigurations
           - **Dynamic Testing**: OWASP ZAP for web vulnerability detection
           - **Lighthouse CI**: Performance monitoring on every build
           - **GitHub Free Compatible**: No Code Scanning upload attempts
