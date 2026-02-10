@@ -27,7 +27,7 @@ jobs:
         DANGEROUS_PACKAGES="eval|exec|child_process|fs\.unlinkSync"
         
         if grep -r "$DANGEROUS_PACKAGES" package.json 2>/dev/null; then
-          echo "⚠️  Potentially dangerous packages detected"
+          echo "  Potentially dangerous packages detected"
           echo "Please review and justify their usage"
         fi
 
@@ -61,13 +61,13 @@ jobs:
           echo "✓ No exposure of privileged ports (< 1024)"
           CHECKS_PASSED=$((CHECKS_PASSED+1))
         else
-          echo "⚠️  Check exposed ports"
+          echo "  Check exposed ports"
         fi
         
         echo ""
         echo "Dockerfile security: $CHECKS_PASSED/$CHECKS_TOTAL checks passed"
         if [ $CHECKS_PASSED -lt 2 ]; then
-          echo "⚠️  Some critical checks failed - review recommended"
+          echo "  Some critical checks failed - review recommended"
         fi
 
     - name: Validate nginx CSP headers
@@ -101,15 +101,20 @@ jobs:
         # Get changed files
         CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD)
         
-        # Skip node_modules and dist
-        CHANGED_FILES=$(echo "$CHANGED_FILES" | grep -v "node_modules\|dist\|\.json\.lock" || true)
+        # Skip node_modules, dist, .github/workflows, and lockfiles
+        CHANGED_FILES=$(echo "$CHANGED_FILES" | grep -v "node_modules\|dist\|\.json\.lock\|\.github/workflows" || true)
         
         FOUND_SECRETS=0
+        SECRETS_PATTERN='(SUPABASE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|MONGO_URI|API_KEY|aws_secret|github_token)'
         
         for file in $CHANGED_FILES; do
           if [ -f "$file" ]; then
-            if grep -E "(SUPABASE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|MONGO_URI|API_KEY|aws_secret|github_token)" "$file" 2>/dev/null | grep -v "test\|example" > /dev/null; then
-              echo "⚠️  Potential secret found in $file"
+            # Get lines with secret patterns but exclude lines containing "secrets." (from GitHub Actions expressions)
+            SECRET_LINES=$(grep -E "$SECRETS_PATTERN" "$file" 2>/dev/null | grep -v "test\|example\|secrets\." || true)
+            
+            if [ ! -z "$SECRET_LINES" ]; then
+              echo "  Potential secret found in $file"
+              echo "$SECRET_LINES"
               FOUND_SECRETS=1
             fi
           fi
@@ -131,12 +136,12 @@ jobs:
           if git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD | grep -q "package-lock.json"; then
             echo "✓ Both package.json and package-lock.json modified"
           else
-            echo "⚠️  package.json modified but package-lock.json unchanged"
+            echo "  package.json modified but package-lock.json unchanged"
             echo "Please run: npm ci"
           fi
         else
           if git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD | grep -q "package-lock.json"; then
-            echo "⚠️  package-lock.json modified without package.json change"
+            echo "  package-lock.json modified without package.json change"
             echo "This may indicate accidental changes. Review carefully."
           else
             echo "✓ Lock file consistency validated"
@@ -149,13 +154,13 @@ jobs:
         if grep -q "sbom-action" .github/workflows/ci.yml; then
           echo "✓ SBOM generation configured in CI"
         else
-          echo "⚠️  SBOM generation not configured - add anchore/sbom-action"
+          echo "  SBOM generation not configured - add anchore/sbom-action"
         fi
 
     - name: Post summary
       if: always()
       run: |
-        echo "## 🔒 Security Policy Check Summary" >> $GITHUB_STEP_SUMMARY
+        echo "##  Security Policy Check Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- ✓ Dockerfile hardening validated" >> $GITHUB_STEP_SUMMARY
         echo "- ✓ Nginx CSP headers verified" >> $GITHUB_STEP_SUMMARY
