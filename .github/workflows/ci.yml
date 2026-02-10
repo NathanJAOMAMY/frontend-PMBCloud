@@ -638,7 +638,10 @@ jobs:
           # Run Falco with custom rules for 60 seconds (run Falco in background, then stop)
           echo "Starting Falco monitor (60s)..."
           
-          docker run -d --name falco-run \
+          # Start Falco in background and capture its container id
+          echo "Starting Falco (background)..."
+          mkdir -p falco-results
+          CONTAINER_ID=$(docker run -d \
             --network host \
             --userns host \
             --pid host \
@@ -652,12 +655,18 @@ jobs:
             falcosecurity/falco:latest \
             -o json_output=true \
             -o container_engines.cri.enabled=true \
-            -c /etc/falco/rules.yaml || true
-          
-          # Let Falco run for 60 seconds then stop and collect logs
-          sleep 60
-          docker stop falco-run || true
-          docker logs falco-run > falco-results/falco-events.log 2>&1 || true
+            -c /etc/falco/rules.yaml 2>/dev/null) || true
+
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "✗ Falco failed to start or Docker run not permitted in this environment" > falco-results/falco-events.log
+            echo "Check permissions / docker configuration; Falco skip for CI run"
+          else
+            echo "✓ Falco started (container id: $CONTAINER_ID)"
+            # Let Falco run for 60 seconds then stop and collect logs
+            sleep 60
+            docker stop "$CONTAINER_ID" || true
+            docker logs "$CONTAINER_ID" > falco-results/falco-events.log 2>&1 || true
+          fi
           
           # Generate Falco events summary
           echo "Generating Falco runtime security report..."
