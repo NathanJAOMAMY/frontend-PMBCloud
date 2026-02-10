@@ -179,6 +179,72 @@ jobs:
             checkov-results.json
           retention-days: 30
 
+  policy-as-code:
+    name: Policy as Code (OPA/Conftest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Conftest
+        run: |
+          echo "Installing Conftest..."
+          wget -q https://github.com/open-policy-agent/conftest/releases/download/v0.50.0/conftest_0.50.0_Linux_x86_64.tar.gz
+          tar xzf conftest_0.50.0_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin/
+          conftest --version
+          
+      - name: Test Dockerfile against policies
+        run: |
+          echo "Testing Dockerfile with OPA policies..."
+          mkdir -p conftest-results
+          
+          conftest test -p policy/dockerfile.rego \
+            -o json Dockerfile > conftest-results/dockerfile-results.json || true
+          
+          echo "✓ Dockerfile policy check completed"
+
+      - name: Test docker-compose against policies
+        run: |
+          echo "Testing docker-compose.yml with OPA policies..."
+          conftest test -p policy/docker_compose.rego \
+            -o json docker-compose.yml > conftest-results/compose-results.json || true
+          
+          echo "✓ docker-compose.yml policy check completed"
+
+      - name: Test nginx.conf against policies
+        run: |
+          echo "Testing nginx.conf with OPA policies..."
+          conftest test -p policy/nginx.rego \
+            -o json nginx.conf > conftest-results/nginx-results.json || true
+          
+          echo "✓ nginx.conf policy check completed"
+
+      - name: Parse Policy as Code results
+        if: always()
+        run: |
+          echo "Parsing Policy as Code violations..."
+          TOTAL_VIOLATIONS=0
+          
+          for file in conftest-results/*.json; do
+            if [ -f "$file" ]; then
+              VIOLATIONS=$(jq '[.[] | select(.result)] | length' "$file" 2>/dev/null || echo "0")
+              TOTAL_VIOLATIONS=$((TOTAL_VIOLATIONS + VIOLATIONS))
+            fi
+          done
+          
+          echo "Found $TOTAL_VIOLATIONS total policy violations"
+          echo "POLICY_VIOLATIONS=$TOTAL_VIOLATIONS" >> $GITHUB_ENV
+
+      - name: Upload Policy as Code results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: policy-as-code-results
+          path: |
+            conftest-results/
+            policy/
+          retention-days: 30
+
   # ============================================================
   # STAGE 2: SAST & Container Build (Parallel)
   # ============================================================
@@ -485,7 +551,7 @@ jobs:
   reports:
     name: Security Reports & Notifications
     runs-on: ubuntu-latest
-    needs: [codeql-scan, container-scan, build, security-audit, owasp-zap-dast, checkov-iac]
+    needs: [codeql-scan, container-scan, build, security-audit, owasp-zap-dast, checkov-iac, policy-as-code]
     if: always()
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -507,6 +573,7 @@ jobs:
           TRIVY_ISSUES=$(jq '.runs[0].results | length' trivy-results/trivy-results.sarif 2>/dev/null || echo "0")
           ZAP_ISSUES=$(jq '.site[0].alerts | length' zap-dast-results/zap-results.json 2>/dev/null || echo "0")
           CHECKOV_ISSUES=$(jq '[.results.failed_checks[]?] | length' checkov-iac-results/checkov-results.json 2>/dev/null || echo "0")
+          POLICY_VIOLATIONS=$(find policy-as-code-results -name "*.json" -exec jq '[.[] | select(.result)] | length' {} + 2>/dev/null | jq -s 'add // 0')
           
           SLACK_MSG="{
             \"text\": \" Security Scan - frontend-PMBCloud\",
@@ -532,6 +599,10 @@ jobs:
                   {
                     \"type\": \"mrkdwn\",
                     \"text\": \"*Checkov (IaC):*\n${CHECKOV_ISSUES} failed checks\"
+                  },
+                  {
+                    \"type\": \"mrkdwn\",
+                    \"text\": \"*OPA (Policy):*\n${POLICY_VIOLATIONS} violations\"
                   },
                   {
                     \"type\": \"mrkdwn\",
@@ -574,6 +645,18 @@ jobs:
             } catch (e) {
               checkovIssues = 0;
             }
+            let policyViolations = 0;
+            try {
+              const policyFiles = require('fs').readdirSync('policy-as-code-results/');
+              for (const file of policyFiles) {
+                if (file.endsWith('.json')) {
+                  const data = JSON.parse(require('fs').readFileSync(`policy-as-code-results/${file}`, 'utf8'));
+                  policyViolations += data.filter(r => r.result).length;
+                }
+              }
+            } catch (e) {
+              policyViolations = 0;
+            }
             
             const comment = `##  Security Scan Report
             
@@ -583,9 +666,11 @@ jobs:
             | Trivy | Container | ${trivyIssues} |
             | OWASP ZAP | DAST | ${zapIssues} |
             | Checkov | IaC | ${checkovIssues} |
+            | OPA/Conftest | Policy | ${policyViolations} |
             
              Container signed with Cosign (keyless)
              SBOM generated (CycloneDX)
+             Policies enforced with OPA
             `;
             
             github.rest.issues.createComment({
@@ -605,6 +690,7 @@ jobs:
           -  Security Audit
           -  CodeQL SAST Analysis
           -  Checkov IaC Scan
+          -  Policy as Code (OPA/Conftest)
           -  Docker Build & Cosign Signing
           -  Container Security Scan (Trivy)
           -  OWASP ZAP DAST Analysis
@@ -617,6 +703,7 @@ jobs:
           - **Container Signing**: Docker images signed with Cosign (keyless)
           - **SBOM Generation**: CycloneDX format for supply chain security
           - **Multi-tool Scanning**: CodeQL (SAST) + Trivy (Container) + OWASP ZAP (DAST) + Checkov (IaC) + npm audit
+          - **Policy as Code**: OPA/Conftest enforces Dockerfile, docker-compose, nginx security policies
           - **IaC Security**: Checkov scans Dockerfile, docker-compose.yml, nginx.conf for misconfigurations
           - **Dynamic Testing**: OWASP ZAP for web vulnerability detection
           - **Lighthouse CI**: Performance monitoring on every build
