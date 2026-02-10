@@ -37,6 +37,16 @@ Ce projet a été renforcé avec une pipeline de sécurité complète et des mei
 - Fichier: `sbom.json`
 - Utilisé pour traçabilité et compliance
 
+#### 6. **Runtime Security Monitoring (Falco)**
+- **Falco** : détecte comportements suspects à l'exécution
+  - Exécution de commandes suspectes (bash, nc, curl)
+  - Tentatives d'escalade de privilèges (sudo/su)
+  - Reverse shells et tunneling non autorisé
+  - Modification de fichiers sensibles (/etc, /root, /app/dist)
+- Monitore pendant 60s à chaque build
+- Résultats uploadés : `falco-runtime-results/`
+- Guide complet : [FALCO_RUNTIME_SECURITY.md](.github/docs/FALCO_RUNTIME_SECURITY.md)
+
 ### 🔒 Container Hardening
 
 **Dockerfile**

@@ -12,8 +12,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Validate Render credentials
+        run: |
+          if [ -z "${{ secrets.RENDER_FRONTEND_SERVICE_ID }}" ]; then
+            echo " Missing RENDER_FRONTEND_SERVICE_ID secret"
+            echo "Configure in: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          if [ -z "${{ secrets.RENDER_API_KEY }}" ]; then
+            echo " Missing RENDER_API_KEY secret"
+            echo "Configure in: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "✓ Render credentials configured"
+      
       - name: Deploy to Render
         uses: johnbeynon/render-deploy-action@v0.0.8
         with:
           service-id: ${{ secrets.RENDER_FRONTEND_SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
+      
+      - name: Post deployment notification
+        if: success()
+        run: |
+          echo "✓ Deployment to Render initiated successfully"
+          echo "Dashboard: https://dashboard.render.com"
+          echo "Application will be live shortly"
+      
+      - name: Deployment failed notification
+        if: failure()
+        run: |
+          echo " Deployment to Render failed"
+          echo "Check logs above for details"
+          exit 1
