@@ -348,13 +348,93 @@ jobs:
           docker stop test-frontend
           docker rm test-frontend
 
+  owasp-zap-dast:
+    name: OWASP ZAP Dynamic Security Scan (DAST)
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        run: |
+          docker build -t pmbcloud-frontend:latest -f Dockerfile .
+          docker tag pmbcloud-frontend:latest pmbcloud-frontend:${{ github.sha }}
+
+      - name: Start application container
+        run: |
+          echo "Starting container for DAST scan..."
+          docker run -d --name zap-target -p 8080:8080 pmbcloud-frontend:latest
+          sleep 20
+          echo "Container started, waiting for application to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080 > /dev/null 2>&1; then
+              echo "✓ Application is ready"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "✗ Application failed to start"
+              docker logs zap-target
+              exit 1
+            fi
+            echo "Waiting... attempt $i/30"
+            sleep 2
+          done
+
+      - name: Run OWASP ZAP Baseline Scan
+        run: |
+          echo "Installing OWASP ZAP..."
+          docker pull ghcr.io/zaproxy/zaproxy:stable || docker pull owasp/zap2docker-stable
+          
+          echo "Running ZAP baseline scan..."
+          docker run --rm \
+            --network host \
+            -v $(pwd):/zap/wrk:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t http://localhost:8080 \
+            -r zap-report.html \
+            -J zap-results.json \
+            -x zap-results.xml \
+            --auto || echo " ZAP scan completed with warnings"
+
+      - name: Parse ZAP results
+        if: always()
+        run: |
+          echo "Parsing ZAP results..."
+          if [ -f "zap-results.json" ]; then
+            ZAP_ISSUES=$(cat zap-results.json | jq '.site[0].alerts | length' 2>/dev/null || echo "0")
+            ZAP_HIGH=$(cat zap-results.json | jq '[.site[0].alerts[] | select(.riskcode=="3")] | length' 2>/dev/null || echo "0")
+            echo "ZAP_ISSUES=$ZAP_ISSUES" >> $GITHUB_ENV
+            echo "ZAP_HIGH=$ZAP_HIGH" >> $GITHUB_ENV
+            echo "✓ Found $ZAP_ISSUES total issues ($ZAP_HIGH high risk)"
+          else
+            echo "No ZAP results found"
+          fi
+
+      - name: Stop application container
+        if: always()
+        run: |
+          docker stop zap-target || true
+          docker rm zap-target || true
+
+      - name: Upload ZAP results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-dast-results
+          path: |
+            zap-report.html
+            zap-results.json
+            zap-results.xml
+          retention-days: 30
+
   # ============================================================
   # STAGE 5: Reports & Notifications
   # ============================================================
   reports:
     name: Security Reports & Notifications
     runs-on: ubuntu-latest
-    needs: [codeql-scan, container-scan, build, security-audit]
+    needs: [codeql-scan, container-scan, build, security-audit, owasp-zap-dast]
     if: always()
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -374,6 +454,7 @@ jobs:
         run: |
           CODEQL_ISSUES=$(jq '.runs[0].results | length' codeql-results/javascript.sarif 2>/dev/null || echo "0")
           TRIVY_ISSUES=$(jq '.runs[0].results | length' trivy-results/trivy-results.sarif 2>/dev/null || echo "0")
+          ZAP_ISSUES=$(jq '.site[0].alerts | length' zap-dast-results/zap-results.json 2>/dev/null || echo "0")
           
           SLACK_MSG="{
             \"text\": \" Security Scan - frontend-PMBCloud\",
@@ -390,11 +471,15 @@ jobs:
                 \"fields\": [
                   {
                     \"type\": \"mrkdwn\",
-                    \"text\": \"*CodeQL:*\n${CODEQL_ISSUES} issues\"
+                    \"text\": \"*CodeQL (SAST):*\n${CODEQL_ISSUES} issues\"
                   },
                   {
                     \"type\": \"mrkdwn\",
-                    \"text\": \"*Trivy:*\n${TRIVY_ISSUES} issues\"
+                    \"text\": \"*Trivy (Container):*\n${TRIVY_ISSUES} issues\"
+                  },
+                  {
+                    \"type\": \"mrkdwn\",
+                    \"text\": \"*OWASP ZAP (DAST):*\n${ZAP_ISSUES} issues\"
                   }
                 ]
               },
@@ -421,13 +506,20 @@ jobs:
             const fs = require('fs');
             const codeqlIssues = JSON.parse(fs.readFileSync('codeql-results/javascript.sarif', 'utf8')).runs[0].results.length || 0;
             const trivyIssues = JSON.parse(fs.readFileSync('trivy-results/trivy-results.sarif', 'utf8')).runs[0].results.length || 0;
+            let zapIssues = 0;
+            try {
+              zapIssues = JSON.parse(fs.readFileSync('zap-dast-results/zap-results.json', 'utf8')).site[0].alerts.length || 0;
+            } catch (e) {
+              zapIssues = 0;
+            }
             
             const comment = `##  Security Scan Report
             
-            | Tool | Issues |
-            |------|--------|
-            | CodeQL | ${codeqlIssues} |
-            | Trivy | ${trivyIssues} |
+            | Tool | Type | Issues |
+            |------|------|--------|
+            | CodeQL | SAST | ${codeqlIssues} |
+            | Trivy | Container | ${trivyIssues} |
+            | OWASP ZAP | DAST | ${zapIssues} |
             
              Container signed with Cosign (keyless)
              SBOM generated (CycloneDX)
@@ -451,6 +543,7 @@ jobs:
           -  CodeQL SAST Analysis
           -  Docker Build & Cosign Signing
           -  Container Security Scan (Trivy)
+          -  OWASP ZAP DAST Analysis
           -  Lighthouse Performance
           -  Container Runtime Test
           -  Reports & Notifications
@@ -459,7 +552,8 @@ jobs:
           - **Parallel Execution**: All jobs run in parallel for reduced time
           - **Container Signing**: Docker images signed with Cosign (keyless)
           - **SBOM Generation**: CycloneDX format for supply chain security
-          - **Multi-tool Scanning**: CodeQL + Trivy + npm audit
+          - **Multi-tool Scanning**: CodeQL (SAST) + Trivy (Container) + OWASP ZAP (DAST) + npm audit
+          - **Dynamic Testing**: OWASP ZAP for web vulnerability detection
           - **Lighthouse CI**: Performance monitoring on every build
           - **GitHub Free Compatible**: No Code Scanning upload attempts
           EOF 
