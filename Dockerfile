@@ -50,9 +50,7 @@ RUN chown -R nginx:nginx /var/cache/nginx && \
     chown -R nginx:nginx /var/log/nginx && \
     chown -R nginx:nginx /etc/nginx/conf.d && \
     chmod -R 755 /var/cache/nginx && \
-    chmod -R 755 /var/log/nginx && \
-    touch /var/run/nginx.pid && \
-    chown nginx:nginx /var/run/nginx.pid
+    chmod -R 755 /var/log/nginx
 
 # Retour à l'utilisateur non privilégié
 USER nginx
