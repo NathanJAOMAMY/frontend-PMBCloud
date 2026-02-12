@@ -1,6 +1,8 @@
 // Local server
 
-export const API_BASE_URL = 'http://localhost:3001';
+// export const API_BASE_URL = 'http://localhost:3001';
+
+export const API_BASE_URL = 'https://backend-pmbcloud.onrender.com';
 
 // APRÈS - pour Docker
 // export const API_BASE_URL = 'http://host.docker.internal:3001';
