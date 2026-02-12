@@ -20,7 +20,7 @@ COPY tsconfig.json ./
 COPY . .
 
 # Variables d'environnement pour le build
-ARG VITE_API_BASE_URL=/api
+ARG VITE_API_BASE_URL=http://localhost:3001
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 # Builder l'application
@@ -41,15 +41,8 @@ RUN apk add --no-cache curl && \
 # Copier les fichiers buildés
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
-# Backend API URL (must be set via build args or environment variable)
-# Do NOT hardcode the URL here - set it via docker-compose or Render build args
-ARG BACKEND_API_URL
-
-# Copier et configurer nginx
+# Copier la configuration nginx sécurisée
 COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
-
-# Remplacer les variables d'environnement dans nginx.conf à la construction
-RUN sed -i "s|\${BACKEND_API_URL}|${BACKEND_API_URL}|g" /etc/nginx/nginx.conf
 
 # S'assurer que les permissions sont correctes
 
