@@ -17,9 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ============================================================
-  # STAGE 1: Build & Security Audit (Parallel)
-  # ============================================================
+  
   build:
     name: Build Application
     runs-on: ubuntu-latest
