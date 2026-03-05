@@ -27,7 +27,7 @@ jobs:
     outputs:
       artifact-name: security-and-build-artifacts
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -85,7 +85,7 @@ jobs:
     env:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -130,7 +130,7 @@ jobs:
     name: Infrastructure as Code Scan (Checkov)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Run Checkov IaC Scan
         run: |
@@ -181,7 +181,7 @@ jobs:
     name: Policy as Code (OPA/Conftest)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Install Conftest
         run: |
@@ -250,7 +250,7 @@ jobs:
     name: CodeQL SAST Analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
@@ -277,7 +277,7 @@ jobs:
       image-digest: ${{ steps.build.outputs.digest }}
       image-name: pmbcloud-frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -334,7 +334,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker-build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build Docker image for scan
         run: |
           docker build -t pmbcloud-frontend:${{ github.sha }} -f Dockerfile .
@@ -377,7 +377,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -431,7 +431,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker-build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build Docker image
         run: |
           docker build -t pmbcloud-frontend:latest -f Dockerfile .
@@ -468,7 +468,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker-build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Build Docker image
         run: |
@@ -548,7 +548,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker-build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Build Docker image
         run: |
@@ -731,7 +731,7 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
