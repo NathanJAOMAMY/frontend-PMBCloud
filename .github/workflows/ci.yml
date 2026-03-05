@@ -70,7 +70,7 @@ jobs:
           fi
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-build
           path: dist/
@@ -111,7 +111,7 @@ jobs:
           echo "✓ Secrets scanning completed"
 
       - name: Upload audit reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: audit-reports
@@ -168,7 +168,7 @@ jobs:
           fi
 
       - name: Upload Checkov results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: checkov-iac-results
@@ -234,7 +234,7 @@ jobs:
           echo "POLICY_VIOLATIONS=$TOTAL_VIOLATIONS" >> $GITHUB_ENV
 
       - name: Upload Policy as Code results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: policy-as-code-results
@@ -262,7 +262,7 @@ jobs:
           upload: false
 
       - name: Upload CodeQL results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: codeql-results
@@ -320,7 +320,7 @@ jobs:
           output-file: 'sbom.json'
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-artifact
           path: sbom.json
@@ -362,7 +362,7 @@ jobs:
           fi
 
       - name: Upload Trivy results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: trivy-results
@@ -418,7 +418,7 @@ jobs:
           kill $SERVER_PID 2>/dev/null || true
 
       - name: Upload Lighthouse results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: lighthouse-results
@@ -533,7 +533,7 @@ jobs:
           docker rm zap-target || true
 
       - name: Upload ZAP results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: zap-dast-results
@@ -713,7 +713,7 @@ jobs:
           docker rm falco-target || true
 
       - name: Upload Falco results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: falco-runtime-results
