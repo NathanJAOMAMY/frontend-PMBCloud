@@ -1,0 +1,124 @@
+# Définir le fichier PID dans un répertoire où nginx a les permissions
+pid /var/cache/nginx/nginx.pid;
+
+# Exécuter nginx en tant qu'utilisateur nginx (pour les images unprivileged)
+user nginx;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Logs format
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log /dev/stdout main;
+    error_log  /dev/stderr warn;
+
+
+    # Headers de sécurité
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header X-Permitted-cross-Domain-Policies "none";
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()";
+    # CSP pour production — autoriser explicitement le backend et les websockets
+    add_header Content-Security-Policy "
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval';
+        style-src 'self' 'unsafe-inline';
+        font-src 'self' data:;
+        img-src 'self' data: blob: https:;
+        connect-src 'self' ${VITE_API_BASE_URL} ws: wss:;
+        frame-src 'self';
+        media-src 'self' data: blob:;
+        worker-src 'self' blob:;
+        manifest-src 'self';
+        base-uri 'self';
+        form-action 'self';
+        frame-ancestors 'none';
+    " always;
+
+    # Rate limiting pour API calls
+    limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+
+    # Compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # Timeouts
+    client_body_timeout 10s;
+    client_header_timeout 10s;
+    keepalive_timeout 65s;
+    send_timeout 10s;
+
+    # Buffer sizes
+    client_body_buffer_size 128k;
+    client_header_buffer_size 1k;
+    client_max_body_size 8m;
+    large_client_header_buffers 4 4k;
+
+    server {
+        listen 8080;
+        server_name localhost;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Sécurité
+        server_tokens off;
+
+        # Proxy API calls to backend (requests to /api/* are proxied to backend)
+        location /api/ {
+            # Backend URL is set via environment variable at runtime
+            # This keeps sensitive URLs out of version control
+            proxy_pass ${VITE_API_BASE_URL};
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+        }
+
+        # Gestion des routes SPA
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Cache pour les assets statiques
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            access_log off;
+        }
+
+        # Bloquer l'accès aux fichiers sensibles
+        location ~ /\. {
+            deny all;
+            access_log off;
+            log_not_found off;
+            return 404;
+        }
+
+        location ~* \.(env|git|md|dockerfile|nginx\.conf)$ {
+            deny all;
+            access_log off;
+            log_not_found off;
+            return 404;
+        }
+
+        # Security headers for specific file types
+        location ~* \.(json|xml)$ {
+            add_header X-Content-Type-Options nosniff;
+            expires 1h;
+        }
+    }
+}

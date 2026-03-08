@@ -32,28 +32,32 @@ RUN find /app/dist -name "*.map" -delete
 # Stage 2: Production
 FROM nginxinc/nginx-unprivileged:alpine
 
-# Installation de curl pour health check (en tant que root temporairement)
+# Installation de curl et gettext (pour envsubst) en tant que root temporairement
 USER root
-RUN apk add --no-cache curl && \
+RUN apk add --no-cache curl gettext && \
     # Nettoyer le cache
     rm -rf /var/cache/apk/*
 
 # Copier les fichiers buildés
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
-# Copier la configuration nginx sécurisée
-COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
+# Copier la configuration nginx template et le script d'entrypoint
+COPY --chown=nginx:nginx nginx.conf.template /etc/nginx/nginx.conf.template
+COPY --chown=root:root docker-entrypoint.sh /docker-entrypoint.sh
+
+# Rendre le script d'entrypoint exécutable
+RUN chmod +x /docker-entrypoint.sh
 
 # S'assurer que les permissions sont correctes
-
 RUN chown -R nginx:nginx /var/cache/nginx && \
     chown -R nginx:nginx /var/log/nginx && \
     chown -R nginx:nginx /etc/nginx/conf.d && \
     chmod -R 755 /var/cache/nginx && \
-    chmod -R 755 /var/log/nginx
+    chmod -R 755 /var/log/nginx && \
+    chmod 755 /etc/nginx
 
-# Retour à l'utilisateur non privilégié
-USER nginx
+# Le script d'entrypoint lance nginx qui switche vers l'utilisateur nginx
+# Pas besoin de faire USER nginx ici puisque nginx.conf configurera l'utilisateur
 
 # Health check (utilise le script créé)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
@@ -61,4 +65,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 
 EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"]
+# Utiliser le script d'entrypoint pour substituer les variables et lancer nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]
