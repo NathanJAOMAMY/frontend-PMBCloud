@@ -48,10 +48,16 @@ jobs:
             echo "Failed to trigger deployment. Curl error."
             exit 1
           fi
+          if [[ "$RESPONSE" != *"Accepted"* ]]; then
+            echo "Unexpected response: $RESPONSE"
+            exit 1
+          fi
           echo "response=$RESPONSE" >> $GITHUB_STEP_SUMMARY
-          DEPLOY_ID=$(echo "$RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "parse_error")
-          if [ "$DEPLOY_ID" = "parse_error" ] || [ -z "$DEPLOY_ID" ]; then
-            echo "Failed to parse deploy ID from response. Response was: $RESPONSE"
+          # Hook doesn't return deploy ID, fetch the latest deploy
+          sleep 5
+          DEPLOY_ID=$(curl -s "https://api.render.com/v1/services/$RENDER_FRONTEND_SERVICE_ID/deploys?limit=1" -H "Authorization: Bearer $RENDER_API_KEY" | jq -r '.[0].id // empty')
+          if [ -z "$DEPLOY_ID" ]; then
+            echo "Failed to retrieve deploy ID after trigger"
             exit 1
           fi
           echo "DEPLOY_ID=$DEPLOY_ID" >> $GITHUB_ENV
