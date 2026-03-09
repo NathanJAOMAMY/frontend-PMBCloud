@@ -57,7 +57,7 @@ jobs:
           sleep 5
           DEPLOYS_RESPONSE=$(curl -s "https://api.render.com/v1/services/$RENDER_FRONTEND_SERVICE_ID/deploys?limit=1" -H "Authorization: Bearer $RENDER_API_KEY")
           echo "Deploys API response: $DEPLOYS_RESPONSE"
-          DEPLOY_ID=$(echo "$DEPLOYS_RESPONSE" | jq -r '.[0].id // empty')
+          DEPLOY_ID=$(echo "$DEPLOYS_RESPONSE" | jq -r '.[0].deploy.id // empty')
           if [ -z "$DEPLOY_ID" ]; then
             echo "Failed to retrieve deploy ID after trigger. API response: $DEPLOYS_RESPONSE"
             exit 1
