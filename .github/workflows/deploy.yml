@@ -71,7 +71,7 @@ jobs:
           # DEPLOY_ID is set in the previous step by writing to $GITHUB_ENV
           # It is available here as a normal environment variable $DEPLOY_ID
           DEPLOY_ID="$DEPLOY_ID"
-          TIMEOUT=900
+          TIMEOUT=1800
           INTERVAL=10
           ELAPSED=0
           echo "Waiting for deploy $DEPLOY_ID to finish (timeout ${TIMEOUT}s)"
