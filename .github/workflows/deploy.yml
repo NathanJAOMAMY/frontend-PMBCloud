@@ -42,15 +42,16 @@ jobs:
         id: trigger
         run: |
           echo "Triggering deployment on Render via deploy hook..."
-          RESPONSE=$(curl -s -X POST "$RENDER_DEPLOY_HOOK")
+          RESPONSE=$(curl -s -L "$RENDER_DEPLOY_HOOK")
+          echo "Raw response: $RESPONSE"
           if [ $? -ne 0 ]; then
             echo "Failed to trigger deployment. Curl error."
             exit 1
           fi
           echo "response=$RESPONSE" >> $GITHUB_STEP_SUMMARY
-          DEPLOY_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
-          if [ -z "$DEPLOY_ID" ]; then
-            echo "Failed to parse deploy ID from response: $RESPONSE"
+          DEPLOY_ID=$(echo "$RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "parse_error")
+          if [ "$DEPLOY_ID" = "parse_error" ] || [ -z "$DEPLOY_ID" ]; then
+            echo "Failed to parse deploy ID from response. Response was: $RESPONSE"
             exit 1
           fi
           echo "DEPLOY_ID=$DEPLOY_ID" >> $GITHUB_ENV
