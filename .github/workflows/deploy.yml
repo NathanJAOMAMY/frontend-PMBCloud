@@ -55,9 +55,11 @@ jobs:
           echo "response=$RESPONSE" >> $GITHUB_STEP_SUMMARY
           # Hook doesn't return deploy ID, fetch the latest deploy
           sleep 5
-          DEPLOY_ID=$(curl -s "https://api.render.com/v1/services/$RENDER_FRONTEND_SERVICE_ID/deploys?limit=1" -H "Authorization: Bearer $RENDER_API_KEY" | jq -r '.[0].id // empty')
+          DEPLOYS_RESPONSE=$(curl -s "https://api.render.com/v1/services/$RENDER_FRONTEND_SERVICE_ID/deploys?limit=1" -H "Authorization: Bearer $RENDER_API_KEY")
+          echo "Deploys API response: $DEPLOYS_RESPONSE"
+          DEPLOY_ID=$(echo "$DEPLOYS_RESPONSE" | jq -r '.[0].id // empty')
           if [ -z "$DEPLOY_ID" ]; then
-            echo "Failed to retrieve deploy ID after trigger"
+            echo "Failed to retrieve deploy ID after trigger. API response: $DEPLOYS_RESPONSE"
             exit 1
           fi
           echo "DEPLOY_ID=$DEPLOY_ID" >> $GITHUB_ENV
