@@ -88,6 +88,27 @@ http {
             proxy_set_header Connection 'upgrade';
         }
 
+        # Healthcheck endpoint pour Render
+        location /health {
+            # verify frontend assets are present
+            if (!-f /usr/share/nginx/html/index.html) {
+                return 503 "unhealthy: static missing\n";
+            }
+            # probe backend health API
+            proxy_pass ${VITE_API_BASE_URL}/health;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_connect_timeout 5s;
+            proxy_read_timeout 5s;
+            proxy_next_upstream error timeout;
+            # response headers
+            add_header Content-Type text/plain;
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+            add_header Pragma "no-cache";
+            add_header Expires "0";
+            access_log off;
+        }
+
         # Gestion des routes SPA
         location / {
             try_files $uri $uri/ /index.html;
