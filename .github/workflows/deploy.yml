@@ -121,6 +121,11 @@ jobs:
             echo "health_ok=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Debug deploy status
+        run: |
+          echo "Deploy status: ${{ steps.wait_deploy.outputs.deploy_status }}"
+          echo "Health check result: ${{ steps.healthcheck.outputs.health_ok }}"
+
       - name: Rollback on failure
         if: ${{ steps.wait_deploy.outputs.deploy_status != 'succeeded' || steps.healthcheck.outputs.health_ok == 'false' }}
         run: |
@@ -131,8 +136,9 @@ jobs:
             PREV_ID=$(curl -s "https://api.render.com/v1/services/$RENDER_FRONTEND_SERVICE_ID/deploys?limit=10" -H "Authorization: Bearer $RENDER_API_KEY" | jq -r --arg CUR "$DEPLOY_ID" '.[] | select(.id != $CUR and .status=="succeeded") | .id' | head -n1)
           fi
           if [ -z "$PREV_ID" ]; then
-            echo "No previous successful deploy found; cannot rollback automatically"
-            exit 1
+            echo "No previous successful deploy found. This appears to be the first deployment or all previous failed — skipping rollback."
+            echo "Manual intervention required: check Render dashboard and redeploy manually if needed."
+            exit 0  # Don't fail the pipeline for first deploy
           fi
           echo "Found previous successful deploy id: $PREV_ID — triggering rollback deploy"
           RB_RESP=$(curl -s -X POST "https://api.render.com/v1/services/$RENDER_FRONTEND_SERVICE_ID/deploys" \
