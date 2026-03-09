@@ -15,6 +15,7 @@ jobs:
     env:
       RENDER_FRONTEND_SERVICE_ID: ${{ secrets.RENDER_FRONTEND_SERVICE_ID }}
       RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
       HEALTHCHECK_URL: ${{ secrets.RENDER_HEALTHCHECK_URL }}
     steps:
       - uses: actions/checkout@v4
@@ -37,18 +38,19 @@ jobs:
           PREV_ID=$(curl -s "https://api.render.com/v1/services/$RENDER_FRONTEND_SERVICE_ID/deploys?limit=10" -H "Authorization: Bearer $RENDER_API_KEY" | jq -r '.[] | select(.status=="succeeded") | .id' | head -n1)
           echo "PREV_SUCCESS_DEPLOY_ID=${PREV_ID:-}" >> $GITHUB_ENV
 
-      - name: Trigger deploy via Render API
+      - name: Trigger deploy via Render Hook
         id: trigger
         run: |
-          echo "Triggering deployment on Render for service $RENDER_FRONTEND_SERVICE_ID..."
-          RESPONSE=$(curl -s -X POST "https://api.render.com/v1/services/$RENDER_FRONTEND_SERVICE_ID/deploys" \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{}')
+          echo "Triggering deployment on Render via deploy hook..."
+          RESPONSE=$(curl -s -X POST "$RENDER_DEPLOY_HOOK")
+          if [ $? -ne 0 ]; then
+            echo "Failed to trigger deployment. Curl error."
+            exit 1
+          fi
           echo "response=$RESPONSE" >> $GITHUB_STEP_SUMMARY
-          DEPLOY_ID=$(echo "$RESPONSE" | jq -r '.id // .deploy.id // empty')
+          DEPLOY_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
           if [ -z "$DEPLOY_ID" ]; then
-            echo " Failed to trigger deployment. Response:\n$RESPONSE"
+            echo "Failed to parse deploy ID from response: $RESPONSE"
             exit 1
           fi
           echo "DEPLOY_ID=$DEPLOY_ID" >> $GITHUB_ENV
