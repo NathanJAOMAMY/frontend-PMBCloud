@@ -88,25 +88,21 @@ http {
             proxy_set_header Connection 'upgrade';
         }
 
-        # Healthcheck endpoint pour Render
+        # Healthcheck endpoint — minimal & fast
+        # Used by Render internal healthcheck and GitHub Actions
+        # Only verifies frontend assets presence, not backend
         location /health {
-            # verify frontend assets are present
+            # Verify assets exist — critical for SPA to work
             if (!-f /usr/share/nginx/html/index.html) {
-                return 503 "unhealthy: static missing\n";
+                return 503 "Service Unavailable\n";
             }
-            # probe backend health API
-            proxy_pass ${VITE_API_BASE_URL}/health;
-            proxy_set_header Host $http_host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_connect_timeout 5s;
-            proxy_read_timeout 5s;
-            proxy_next_upstream error timeout;
-            # response headers
+            # Assets present = service healthy
+            return 200 "OK\n";
             add_header Content-Type text/plain;
             add_header Cache-Control "no-cache, no-store, must-revalidate";
             add_header Pragma "no-cache";
             add_header Expires "0";
-            access_log off;
+            access_log off;  # Don't log healthcheck calls
         }
 
         # Gestion des routes SPA

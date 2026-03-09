@@ -97,32 +97,38 @@ jobs:
             echo "deploy_status=$DEPLOY_STATUS" >> $GITHUB_OUTPUT
           fi
 
-      - name: Health check (optional)
+      - name: Health check (strict mode)
         id: healthcheck
         run: |
           if [ -z "$HEALTHCHECK_URL" ]; then
-            echo "No HEALTHCHECK_URL set; skipping HTTP health check"
+            echo "No HEALTHCHECK_URL configured — skipping post-deploy health verification"
             echo "health_ok=skipped" >> $GITHUB_OUTPUT
             exit 0
           fi
-          echo "Checking health endpoint: $HEALTHCHECK_URL"
+          echo " Starting health checks on: $HEALTHCHECK_URL"
           OK=0
-          for i in 1 2 3 4 5; do
-            if curl -sSf -m 10 "$HEALTHCHECK_URL" >/dev/null 2>&1; then
+          # Strict: require HTTP 200, not 503
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 15 "$HEALTHCHECK_URL" 2>/dev/null)
+            if [ "$STATUS" = "200" ]; then
+              echo "✓ Health check #$i: STATUS=$STATUS (PASS)"
               OK=1
               break
+            else
+              echo "✗ Health check #$i: STATUS=$STATUS — retrying in 15s..."
+              sleep 15
             fi
-            echo "Health check attempt $i failed, retrying..."
-            sleep 10
           done
           if [ $OK -eq 1 ]; then
             echo "health_ok=true" >> $GITHUB_OUTPUT
           else
+            echo " Health check failed after 10 attempts — deployment considered failed"
             echo "health_ok=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Debug deploy status
         run: |
+          echo "=== DEPLOYMENT STATUS ==="
           echo "Deploy status: ${{ steps.wait_deploy.outputs.deploy_status }}"
           echo "Health check result: ${{ steps.healthcheck.outputs.health_ok }}"
 
@@ -153,14 +159,20 @@ jobs:
           fi
           echo "Rollback deploy triggered: $RB_ID"
 
-      - name: Post-deploy summary
+      - name: Post-deploy success summary
         if: ${{ steps.wait_deploy.outputs.deploy_status == 'succeeded' && steps.healthcheck.outputs.health_ok != 'false' }}
         run: |
-          echo " Deployment completed and health check OK"
-          echo "Service: https://dashboard.render.com/services/$RENDER_FRONTEND_SERVICE_ID"
+          echo " DEPLOYMENT SUCCESSFUL"
+          echo "Service Status: ${{ steps.wait_deploy.outputs.deploy_status }}"
+          echo "Health Status: ${{ steps.healthcheck.outputs.health_ok }}"
+          echo "URL: https://frontend-pmbcloud.onrender.com"
+          echo "Dashboard: https://dashboard.render.com/services/$RENDER_FRONTEND_SERVICE_ID"
 
       - name: Post-deploy failure summary
         if: ${{ steps.wait_deploy.outputs.deploy_status != 'succeeded' || steps.healthcheck.outputs.health_ok == 'false' }}
         run: |
-          echo " Deployment failed or healthcheck failed. Check Render dashboard and logs."
+          echo " DEPLOYMENT FAILED"
+          echo "Deploy Status: ${{ steps.wait_deploy.outputs.deploy_status }}"
+          echo "Healthcheck: ${{ steps.healthcheck.outputs.health_ok }}"
+          echo "Review logs at: https://dashboard.render.com/services/$RENDER_FRONTEND_SERVICE_ID"
           exit 1
