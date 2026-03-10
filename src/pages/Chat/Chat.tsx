@@ -98,7 +98,7 @@ const ChatApp: React.FC = () => {
     };
 
     getDataChat();
-  }, [currentUser?.idUser, dispatch, messages, loading]);
+  }, [currentUser?.idUser, dispatch]); // Removed messages and loading to prevent repeated calls
 
   const isConversationSelected = /^\/chat\/[^/]+/.test(location.pathname);
   return (

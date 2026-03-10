@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import fileEmpty from "../../assets/images/file empty.jpg";
 import { supabase } from "../../supabase";

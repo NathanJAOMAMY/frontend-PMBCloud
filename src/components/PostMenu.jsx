@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import PropTypes from "prop-types";
 import ModalDialoge from "./UI/ModalDialoge";
 
 export default function PostMenu({ onEdit, post, isOwner, onDeleteSuccess }) {
@@ -40,3 +41,10 @@ export default function PostMenu({ onEdit, post, isOwner, onDeleteSuccess }) {
     </div>
   );
 }
+
+PostMenu.propTypes = {
+  onEdit: PropTypes.func.isRequired,
+  post: PropTypes.object.isRequired,
+  isOwner: PropTypes.bool.isRequired,
+  onDeleteSuccess: PropTypes.func.isRequired,
+};

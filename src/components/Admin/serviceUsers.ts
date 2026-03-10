@@ -1,6 +1,6 @@
 import axios from "axios";
 import {  User } from "../../data/typeData";
-import { API_BASE_URL } from "../../api";
+import { API_BASE_URL, apiRequest } from "../../api";
 
 // CREATE
 export const onAddService = async (
@@ -43,7 +43,10 @@ export const onGetService = async <T>(endPoint: string): Promise<T[]> => {
 // GET (one by id)
 export const onGetByIdService = async <T>(endPoint: string, id: string): Promise<T | null> => {
   try {
-    const response = await axios.get<T>(`${API_BASE_URL}/${endPoint.toLowerCase()}/${id}`);
+    const response = await apiRequest<T>({
+      method: 'GET',
+      url: `${API_BASE_URL}/${endPoint.toLowerCase()}/${id}`
+    });
     return response.data;
   } catch (error) {
     console.error("Erreur lors de la requête GET by ID", error);

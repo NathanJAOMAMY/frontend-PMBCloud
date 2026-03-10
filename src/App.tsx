@@ -1,5 +1,5 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "./App.css";
@@ -30,6 +30,8 @@ import LoadingSpinner from "./pages/SocialMedia/LoadingSpinner";
 const App = () => {
 
   const dispatch = useDispatch()
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     const getData = async () => {
       try {
@@ -41,10 +43,12 @@ const App = () => {
         }
       } catch (error) {
         console.error('[App] Error fetching users:', error);
+      } finally {
+        setIsLoading(false);
       }
     }
     getData()
-  }, [dispatch]);
+  }, []); // Empty dependency array to run only once on mount
 
   return (
     <AuthProvider>

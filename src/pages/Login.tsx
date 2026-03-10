@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setCurrentUser } from "../redux/features/user/user";
-import { API_BASE_URL } from "../api";
+import { API_BASE_URL, apiRequest } from "../api";
 import { toast } from "react-toastify";
 import { User } from "../data/typeData";
 import { FiEye, FiEyeOff, FiLoader } from "react-icons/fi";
@@ -51,12 +51,12 @@ const Login = () => {
             navigate("/login");
           }
         } catch (err) {
-          console.log(err);
+          console.log('[Login] Error checking user:', err);
         }
       }
     };
     checkUser();
-  }, []);
+  }, [localStoreUser]); // Ajouter localStoreUser comme dépendance
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -74,11 +74,13 @@ const Login = () => {
     }
 
     try {
-      const { data } = await axios.post<LoginResponse>(
-        `${API_BASE_URL}/auth/login`,
-        { identifiant: userName, password },
-        { withCredentials: true }
-      );
+      const response = await apiRequest<LoginResponse>({
+        method: 'POST',
+        url: `${API_BASE_URL}/auth/login`,
+        data: { identifiant: userName, password },
+        withCredentials: true
+      });
+      const { data } = response;
       localStorage.setItem("token", data.token);
       localStorage.setItem("userInfo", JSON.stringify(data.user));
 

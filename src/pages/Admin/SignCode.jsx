@@ -63,7 +63,7 @@ const SignCode = () => {
   return (
     <div className='text-normal'>
       <div className='mb-2 flex justify-between'>
-        <p className='text-lg'>Code d'inscription</p>
+        <p className='text-lg'>Code d&apos;inscription</p>
         <div className='text-white flex items-center'>
           <button className='px-2 py-1 bg-primary rounded-sm cursor-pointer' onClick={() => handleCreate()}>Générer un code</button>
         </div>
@@ -80,7 +80,7 @@ const SignCode = () => {
           </thead>
           <tbody>
             {listCode.map((item) => {
-              return <tr className='text-center py-5'>
+              return <tr key={item.id || item.content_code} className='text-center py-5'>
                 <td>{item.content_code}</td>
                 <td><p>{item.status_file === 0 ? "Libre" : "Utilisé"}</p></td>
                 <td><button>Supprimer</button></td>

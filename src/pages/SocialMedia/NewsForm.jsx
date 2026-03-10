@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { FiImage, FiPaperclip, FiVideo, FiEdit3, FiLink } from 'react-icons/fi';
 import { createPost} from '../../api/socialApi';
 import { useSelector } from 'react-redux';
@@ -346,6 +347,14 @@ const NewsForm = ({ onNewPost, user, editMode = false, initialData = null, onUpd
       )}
     </div>
   );
+};
+
+NewsForm.propTypes = {
+  onNewPost: PropTypes.func.isRequired,
+  user: PropTypes.object.isRequired,
+  editMode: PropTypes.bool,
+  initialData: PropTypes.object,
+  onUpdatePost: PropTypes.func.isRequired,
 };
 
 export default NewsForm;

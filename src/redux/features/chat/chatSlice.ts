@@ -161,7 +161,11 @@ const chatSlice = createSlice({
         messages: ChatMessageType[];
       }>
     ) {
-      state.messages[action.payload.conversationId] = action.payload.messages;
+      if (action.payload?.conversationId && action.payload?.messages) {
+        state.messages[action.payload.conversationId] = action.payload.messages;
+      } else {
+        console.error('[setMessages] Invalid payload:', action.payload);
+      }
     },
 
     setConversations(state, action: PayloadAction<ChatConversation[]>) {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { FiDownload, FiExternalLink, FiPaperclip, FiLoader } from 'react-icons/fi';
 import { FaRegCommentDots, FaRegPaperPlane, FaRegThumbsUp, FaHandsClapping, FaHeart, FaLightbulb, FaFaceSmile, FaFaceGrinStars } from "react-icons/fa6";
 // import { fetchPosts, addReaction, addComment, addCommentReaction, replyToComment, addReplyReaction } from '../../api/socialApi';
@@ -1061,6 +1062,14 @@ const handleUpdatePost = async (postData, postId) => {
       )}
     </div>
   );
+};
+
+ReactionBar.propTypes = {
+  onSelect: PropTypes.func.isRequired,
+};
+
+NewsFeed.propTypes = {
+  refreshTrigger: PropTypes.any,
 };
 
 export default NewsFeed;

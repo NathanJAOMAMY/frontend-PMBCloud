@@ -25,7 +25,7 @@ const TopFile = () => {
     surname: "Doe",
     pseudo: "johndoe",
     role: "admin",
-    password: "password123",
+    password: "", // Removed hardcoded password for security
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     statusUser: false,

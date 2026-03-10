@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../../api";
+import { API_BASE_URL, apiRequest } from "../../api";
 import {
   ChatConversation,
   ChatMessage,
@@ -112,7 +112,10 @@ export const findConversationUser = async(idUser :string, idConversation : strin
 }
 export const fetchUser = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/auth/allUser`);
+    const response = await apiRequest<User[]>({
+      method: 'GET',
+      url: `${API_BASE_URL}/auth/allUser`
+    });
     if (response.status === 200 && Array.isArray(response.data)) {
       return response.data as User[];
     } else {
