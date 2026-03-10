@@ -1,5 +1,5 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "./App.css";
@@ -31,13 +31,20 @@ const App = () => {
 
   const dispatch = useDispatch()
   const [isLoading, setIsLoading] = useState(true);
+  const usersLoadedRef = useRef(false);
 
   useEffect(() => {
     const getData = async () => {
+      // Prevent multiple calls - only run once on mount
+      if (usersLoadedRef.current) return;
+
       try {
+        console.log('[App] Fetching users on mount...');
         const allUser = await fetchUser();
         if (allUser && Array.isArray(allUser) && allUser.length > 0) {
+          console.log('[App] Dispatching setUser with', allUser.length, 'users');
           dispatch(setUser(allUser))
+          usersLoadedRef.current = true; // Mark as loaded
         } else {
           console.warn('[App] fetchUser returned empty or invalid data:', allUser);
         }
@@ -48,7 +55,7 @@ const App = () => {
       }
     }
     getData()
-  }, []); // Empty dependency array to run only once on mount
+  }, []); // Empty dependency array - only run once on mount
 
   return (
     <AuthProvider>

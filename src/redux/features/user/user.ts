@@ -27,12 +27,24 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setCurrentUser(state, action: PayloadAction<User>) {
+      if (!action.payload) {
+        console.error('[setCurrentUser] Invalid payload:', action.payload);
+        return;
+      }
       state.currentUser = action.payload;
     },
     setUser(state, action: PayloadAction<User[]>) {
+      if (!action.payload) {
+        console.error('[setUser] Invalid payload:', action.payload);
+        return;
+      }
       state.users = action.payload;
     },
     addUserLocal(state, action: PayloadAction<User>) {
+      if (!action.payload) {
+        console.error('[addUserLocal] Invalid payload:', action.payload);
+        return;
+      }
       const existingUser = state.users.findIndex(
         (u) => u.idUser === action.payload.idUser
       );
@@ -43,6 +55,10 @@ const userSlice = createSlice({
       }
     },
     deletUser(state, action: PayloadAction<User>) {
+      if (!action.payload) {
+        console.error('[deletUser] Invalid payload:', action.payload);
+        return;
+      }
       state.users = state.users.filter(
         (u) => u.idUser !== action.payload.idUser
       );

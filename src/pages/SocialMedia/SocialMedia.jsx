@@ -17,24 +17,33 @@ const SocialMedia = () => {
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Vérifier si l'utilisateur est connecté
+  const isLoggedIn = !!userInfo && !!localStorage.getItem('token');
+
   // Récupération des posts au montage
   useEffect(() => {
     const loadPosts = async () => {
+      // Ne charger les posts que si l'utilisateur est connecté
+      if (!isLoggedIn) {
+        setLoading(false);
+        return;
+      }
+
       try {
+        console.log('[SocialMedia] Loading posts...');
         const data = await fetchPosts();
-        setPosts(data);
+        console.log('[SocialMedia] Posts loaded:', data?.length || 0);
+        setPosts(data || []);
       } catch (err) {
-        setError(err.message);
-        console.error("Erreur chargement posts:", err);
+        console.error('[SocialMedia] Error loading posts:', err);
+        setError(err.message || 'Erreur lors du chargement des publications');
       } finally {
         setLoading(false);
       }
     };
 
     loadPosts();
-
-    
-  }, []);
+  }, [isLoggedIn]);
 
   // Callback après création d'un nouveau post
   const handleNewPost = (newPost) => {
@@ -50,13 +59,33 @@ const SocialMedia = () => {
           <UserProfile user={userInfo} />
         </aside>
         <main className="social-media-main">
-          <NewsForm onNewPost={handleNewPost} user={userInfo} />
-          {loading ? (
-            <div className="loading-spinner">Chargement...</div>
-          ) : error ? (
-            <div className="error-message">{error}</div>
+          {!isLoggedIn ? (
+            <div className="social-media-not-logged-in">
+              <div className="not-logged-in-message">
+                <h2>Connexion requise</h2>
+                <p>Vous devez être connecté pour accéder aux réseaux sociaux.</p>
+                <p>Veuillez vous connecter pour partager et voir les publications.</p>
+              </div>
+            </div>
           ) : (
-            <NewsFeed posts={posts} refreshTrigger={refreshTrigger} users={users} />
+            <>
+              <NewsForm onNewPost={handleNewPost} user={userInfo} />
+              {loading ? (
+                <div className="loading-spinner">
+                  <div className="spinner"></div>
+                  <p>Chargement des publications...</p>
+                </div>
+              ) : error ? (
+                <div className="error-message">
+                  <p>❌ {error}</p>
+                  <button onClick={() => window.location.reload()} className="retry-btn">
+                    Réessayer
+                  </button>
+                </div>
+              ) : (
+                <NewsFeed posts={posts} refreshTrigger={refreshTrigger} users={users} />
+              )}
+            </>
           )}
         </main>
         <aside className="social-media-right">

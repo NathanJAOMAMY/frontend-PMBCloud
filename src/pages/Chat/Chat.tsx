@@ -66,31 +66,29 @@ const ChatApp: React.FC = () => {
 
     const getDataChat = async () => {
       try {
-        const [chatConversation, user, currentConversationUser] = await Promise.all([
+        console.log('[Chat] Fetching chat data for user:', currentUser.idUser);
+        const [chatConversation, currentConversationUser] = await Promise.all([
           fetChatConversation(currentUser.idUser),
-          fetchUser(),
           fetchConversationUser(currentUser.idUser),
         ]);
 
         if (chatConversation) {
+          console.log('[Chat] Dispatching fetchChatConversation with', chatConversation.length, 'conversations');
           dispatch(fetchChatConversation(chatConversation));
-
-          // Pour chaque conversation, fetch messages uniquement si pas déjà là ET pas en cours de chargement
-          chatConversation.forEach(async (conv) => {
-            socket.emit("joinConversation", conv.id);
-            const msgs = messages[conv.id];
-            if (!msgs && !loading) {
-              dispatch(fetchMessagesThunk(conv.id));
-            }
-          });
+        } else {
+          console.warn('[Chat] No chat conversations received');
         }
 
-        if (user) {
-          dispatch(setUser(user));
-        }
+        // Don't fetch users here - already done in App.tsx
+        // if (user) {
+        //   dispatch(setUser(user));
+        // }
 
         if (currentConversationUser) {
+          console.log('[Chat] Dispatching fetchConversationCurrentUser with', currentConversationUser.length, 'conversation users');
           dispatch(fetchConversationCurrentUser(currentConversationUser));
+        } else {
+          console.warn('[Chat] No conversation users received');
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -98,7 +96,7 @@ const ChatApp: React.FC = () => {
     };
 
     getDataChat();
-  }, [currentUser?.idUser, dispatch]); // Removed messages and loading to prevent repeated calls
+  }, [currentUser?.idUser]); // Only depend on user ID to prevent repeated calls
 
   const isConversationSelected = /^\/chat\/[^/]+/.test(location.pathname);
   return (

@@ -25,6 +25,8 @@ export const uploadFile = async (
 ): Promise<string | undefined> => {
   if (!file) return undefined;
 
+  try {
+
   const fileExt = file.name.split(".").pop();
   const filePath = `${uploadTo}/${uuid()}.${fileExt}`;
 
@@ -45,6 +47,10 @@ export const uploadFile = async (
     .getPublicUrl(filePath);
 
   return urlData.publicUrl;
+  } catch (error) {
+    console.error("[uploadFile] Supabase error:", error);
+    return undefined;
+  }
 };
 
 export const deleteFile = async (fileUrl: string) => {

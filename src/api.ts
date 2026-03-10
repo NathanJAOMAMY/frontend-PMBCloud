@@ -1,13 +1,22 @@
-// Local server
+// API Base URL - uses environment variable for different environments
+// @ts-ignore - Vite provides import.meta.env
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
+// Debug: Log the API URL being used
+console.log('[API] Using API_BASE_URL:', API_BASE_URL);
+// @ts-ignore - Vite provides import.meta.env
+console.log('[API] VITE_API_BASE_URL env:', import.meta.env.VITE_API_BASE_URL);
+
+// Local server (commented for reference)
 // export const API_BASE_URL = 'http://localhost:3001';
 
-export const API_BASE_URL = 'https://backend-pmbcloud.onrender.com';
+// Production server (commented for reference)
+// export const API_BASE_URL = 'https://backend-pmbcloud.onrender.com';
 
-// APRÈS - pour Docker
+// Docker setup (commented for reference)
 // export const API_BASE_URL = 'http://host.docker.internal:3001';
 
-// online server
+// Other online servers (commented for reference)
 // export const API_BASE_URL = 'https://back-intranet.onrender.com';
 // export const API_BASE_URL = 'https://env-2523343.jcloud-ver-jpe.ik-server.com';
 
