@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
 // @ts-ignore - Vite provides import.meta.env
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mxbzfekwbvybtxlutkpz.supabase.co'
+// Choose supabase configuration from environment or fall back for local dev
+// (the fallback should **not** be used in production; Render must supply the env vars)
 // @ts-ignore - Vite provides import.meta.env
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14YnpmZWt3YnZ5YnR4bHV0a3B6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDA5MzgsImV4cCI6MjA2OTk3NjkzOH0.uzpo6Ar5fCylFHcMjoRwWQybMJ3TknzJoSHCGFkmkQs"
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''; // intentionally empty
+// @ts-ignore - Vite provides import.meta.env
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_KEY environment variable');
+}
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
