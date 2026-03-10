@@ -26,13 +26,13 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 # Builder l'application
 RUN npm run build
 
-# Assurer que les fichiers public sont dans dist
-RUN echo "=== Files in dist before copy ===" && ls -la dist/ | head -20
-RUN cp manifest.json service-worker.js dist/ 2>/dev/null || cp public/manifest.json public/service-worker.js dist/ 2>/dev/null || echo "PWA files not found at root or public/"
-RUN echo "=== Files in dist after copy ===" && ls -la dist/ | grep -E "(manifest|service-worker|index.html)" || echo "Key files not found"
+# Assurer que TOUS les fichiers public sont dans dist (logo.png, manifest.json, service-worker.js)
+RUN echo "=== Files in dist after build ===" && ls -la dist/
+RUN echo "=== Copying all files from public/ to dist/ ===" && cp -v public/logo.png public/manifest.json public/service-worker.js dist/ && echo "✓ All PWA files copied"
+RUN echo "=== Verification: files in dist/ ===" && ls -la dist/ | grep -E "(logo|manifest|service-worker|index.html)"
 
 # Nettoyage des fichiers inutiles
-RUN find /app/dist -name "*.map" -delete
+RUN find /app/dist -name "*.map" -delete && echo "✓ Source maps removed"
 
 # Stage 2: Production
 FROM nginxinc/nginx-unprivileged:alpine

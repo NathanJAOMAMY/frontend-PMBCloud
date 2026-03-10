@@ -217,7 +217,12 @@ const chatSlice = createSlice({
       })
       .addCase(fetchMessagesThunk.fulfilled, (state, action) => {
         state.loading = false;
-        state.messages[action.payload.conversationId] = action.payload.messages;
+        // Safety check: only update if payload exists
+        if (action.payload?.conversationId && action.payload?.messages) {
+          state.messages[action.payload.conversationId] = action.payload.messages;
+        } else {
+          state.error = "Invalid payload received from fetchMessages";
+        }
       })
       .addCase(fetchMessagesThunk.rejected, (state, action) => {
         state.loading = false;

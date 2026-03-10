@@ -1,5 +1,6 @@
 // public/service-worker.js
-const CACHE_NAME = 'pmbcloud-v1.2.0';
+// increment CACHE_NAME anytime static asset list changes (force client update)
+const CACHE_NAME = 'pmbcloud-v1.2.1';
 const STATIC_CACHE = 'static-v1';
 const DYNAMIC_CACHE = 'dynamic-v1';
 

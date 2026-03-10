@@ -32,13 +32,19 @@ const App = () => {
   const dispatch = useDispatch()
   useEffect(() => {
     const getData = async () => {
-      const allUser = await fetchUser();
-      if (allUser) {
-        dispatch(setUser(allUser))
+      try {
+        const allUser = await fetchUser();
+        if (allUser && Array.isArray(allUser) && allUser.length > 0) {
+          dispatch(setUser(allUser))
+        } else {
+          console.warn('[App] fetchUser returned empty or invalid data:', allUser);
+        }
+      } catch (error) {
+        console.error('[App] Error fetching users:', error);
       }
     }
     getData()
-  }, []);
+  }, [dispatch]);
 
   return (
     <AuthProvider>

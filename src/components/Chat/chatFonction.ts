@@ -113,9 +113,14 @@ export const findConversationUser = async(idUser :string, idConversation : strin
 export const fetchUser = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/auth/allUser`);
-    return response.data as User[];
+    if (response.status === 200 && Array.isArray(response.data)) {
+      return response.data as User[];
+    } else {
+      console.warn('[fetchUser] Invalid response format:', response.data);
+      return [];
+    }
   } catch (error) {
-    console.log(error);
+    console.error('[fetchUser] Failed to fetch users:', error instanceof Error ? error.message : error);
     return [];
   }
 };
