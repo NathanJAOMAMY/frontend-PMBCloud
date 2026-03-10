@@ -8,7 +8,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../api';
 import { useDispatch } from 'react-redux';
 import { setCurrentUser } from '../redux/features/user/user';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FiEdit, FiLogOut, FiSearch, FiXCircle } from 'react-icons/fi';
 
 const TopFile = () => {
