@@ -26,6 +26,9 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 # Builder l'application
 RUN npm run build
 
+# Assurer que les fichiers public sont dans dist
+RUN cp -r public/* dist/ 2>/dev/null || echo "No public files to copy"
+
 # Nettoyage des fichiers inutiles
 RUN find /app/dist -name "*.map" -delete
 
