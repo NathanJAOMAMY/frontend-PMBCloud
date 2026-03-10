@@ -67,7 +67,9 @@ http {
     large_client_header_buffers 4 4k;
 
     server {
-        listen 8080;
+        # Listen port is provided by environment variable (Render sets $PORT automatically).
+        # Falling back to 8080 for local testing.
+        listen ${PORT:-8080};
         server_name localhost;
         root /usr/share/nginx/html;
         index index.html;

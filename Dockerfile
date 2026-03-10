@@ -64,9 +64,10 @@ RUN chown -R nginx:nginx /var/cache/nginx && \
 # Le script d'entrypoint lance nginx qui switche vers l'utilisateur nginx
 # Pas besoin de faire USER nginx ici puisque nginx.conf configurera l'utilisateur
 
-# Health check (utilise le script créé)
+# Health check uses the same port the server listens on. If PORT is not set we
+# default to 8080 so local builds still work. Render will provide PORT env var.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:8080/ || exit 1
+  CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
 
 EXPOSE 8080
 
