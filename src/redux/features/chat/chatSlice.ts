@@ -168,7 +168,15 @@ const chatSlice = createSlice({
         message: ChatMessageType;
       }>
     ) {
+      if (!action.payload || !action.payload.conversationId) {
+        console.error('[addMessage] Invalid payload:', action.payload);
+        return;
+      }
       const { conversationId, message } = action.payload;
+      if (!message) {
+        console.error('[addMessage] Invalid message:', message);
+        return;
+      }
       if (!state.messages[conversationId]) {
         state.messages[conversationId] = [];
       }
@@ -246,12 +254,20 @@ const chatSlice = createSlice({
         message: ChatMessageType;
       }>
     ) {
+      if (!action.payload || !action.payload.conversationId) {
+        console.error('[updateLastMessage] Invalid payload:', action.payload);
+        return;
+      }
       const { conversationId, message } = action.payload;
+      if (!message) {
+        console.error('[updateLastMessage] Invalid message:', message);
+        return;
+      }
       const conv = state.chatConversations.find((c) => c.id === conversationId);
       if (!state.messages[conversationId]) state.messages[conversationId] = [];
       if (conv) {
         conv.lastMessage = message;
-        state.messages[conversationId].push(action.payload.message);
+        state.messages[conversationId].push(message);
       }
     },
   },

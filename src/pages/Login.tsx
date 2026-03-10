@@ -1,4 +1,4 @@
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent, useRef } from "react";
 import bg from "../assets/images/bg-login.jpeg";
 import logo from "../assets/images/logo-pmbcloud.png";
 import { Button, Modal } from "../components/Utils";
@@ -11,7 +11,6 @@ import { API_BASE_URL, apiRequest } from "../api";
 import { toast } from "react-toastify";
 import { User } from "../data/typeData";
 import { FiEye, FiEyeOff, FiLoader } from "react-icons/fi";
-import { onGetByIdService } from "../components/Admin/serviceUsers";
 
 interface LoginResponse {
   token: string;
@@ -27,39 +26,38 @@ const Login = () => {
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [show, setShow] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAlreadyLoggedIn, setIsAlreadyLoggedIn] = useState<boolean>(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  const localStoreUser = localStorage.getItem("userInfo");
+  const redirectCheckRef = useRef<boolean>(false);
 
   useEffect(() => {
+    // Only check once on mount - avoid repeated checks
+    if (redirectCheckRef.current) return;
+    redirectCheckRef.current = true;
+
+    const localStoreUser = localStorage.getItem("userInfo");
     if (localStoreUser) {
-      dispatch(setCurrentUser(JSON.parse(localStoreUser) as User));
-      navigate("/");
-    }
-  }, [localStoreUser, dispatch, navigate]);
-
-  useEffect(() => {
-    const checkUser = async () => {
-      if (localStoreUser) {
-        try {
-          const parsedUser = JSON.parse(localStoreUser) as User;
-          const getCurrentUser = await onGetByIdService<User>('users', parsedUser.idUser);
-          if (!getCurrentUser) {
-            localStorage.removeItem("userInfo");
-            navigate("/login");
-          }
-        } catch (err) {
-          console.log('[Login] Error checking user:', err);
+      try {
+        const user = JSON.parse(localStoreUser) as User;
+        if (user && user.idUser) {
+          setIsAlreadyLoggedIn(true);
+          dispatch(setCurrentUser(user));
+          navigate("/", { replace: true });
+        } else {
+          localStorage.removeItem("userInfo");
         }
+      } catch (err) {
+        console.error('[Login] Error parsing stored user:', err);
+        localStorage.removeItem("userInfo");
       }
-    };
-    checkUser();
-  }, [localStoreUser]); // Ajouter localStoreUser comme dépendance
+    }
+  }, []); // Empty dependency array - run only once
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (isLoading) return; // Prevent multiple submissions
     setIsLoading(true);
     loginClient(username, password);
   };
@@ -122,8 +120,16 @@ const Login = () => {
   const openModal = () => setModalOpen(true);
   const closeModal = () => setModalOpen(false);
 
-  if (!localStoreUser) {
+  if (isAlreadyLoggedIn) {
     return (
+      <div className="flex flex-col items-center justify-center h-screen gap-3 text-gray-700">
+        <FiLoader className="animate-spin text-primary" size={40} />
+        <span className="text-lg font-medium">Redirection en cours...</span>
+      </div>
+    );
+  }
+
+  return (
       <div
         className="h-screen w-screen flex items-center justify-center relative text-gray-800"
         style={{
@@ -206,13 +212,6 @@ const Login = () => {
         </div>
       </div>
     );
-  }
-  return (
-    <div className="flex flex-col items-center justify-center h-screen gap-3 text-gray-700">
-      <FiLoader className="animate-spin text-primary" size={40} />
-      <span className="text-lg font-medium">Connexion en cours...</span>
-    </div>
-  );
 };
 
 export default Login;
