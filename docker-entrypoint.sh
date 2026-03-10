@@ -5,6 +5,7 @@ set -e
 
 # Définir les variables par défaut si non présentes
 export VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001}
+export PORT=${PORT:-8080}
 
 echo "Starting nginx with API base URL: $VITE_API_BASE_URL" && \
 # log the port (Render provides PORT env var)
