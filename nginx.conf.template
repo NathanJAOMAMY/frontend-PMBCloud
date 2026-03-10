@@ -69,7 +69,7 @@ http {
     server {
         # Listen port is provided by environment variable (Render sets $PORT automatically).
         # Falling back to 8080 for local testing.
-        listen ${PORT:-8080};
+        listen ${PORT};
         server_name localhost;
         root /usr/share/nginx/html;
         index index.html;
