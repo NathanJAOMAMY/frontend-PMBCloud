@@ -28,7 +28,7 @@ RUN npm run build
 
 # Assurer que les fichiers public sont dans dist
 RUN echo "=== Files in dist before copy ===" && ls -la dist/ | head -20
-RUN cp -r public/* dist/ 2>/dev/null || echo "No public files to copy"
+RUN cp manifest.json service-worker.js dist/ 2>/dev/null || cp public/manifest.json public/service-worker.js dist/ 2>/dev/null || echo "PWA files not found at root or public/"
 RUN echo "=== Files in dist after copy ===" && ls -la dist/ | grep -E "(manifest|service-worker|index.html)" || echo "Key files not found"
 
 # Nettoyage des fichiers inutiles

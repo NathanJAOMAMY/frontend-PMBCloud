@@ -13,7 +13,6 @@ dist-ssr
 *.local
 server/uploads/final/*
 server/src/data/*
-public
 .vite
 .env
 .env.local
