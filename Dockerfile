@@ -41,6 +41,9 @@ RUN apk add --no-cache curl gettext && \
 # Copier les fichiers buildés
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
+# Copier les fichiers public restants (manifest, service-worker, etc.)
+COPY --from=builder --chown=nginx:nginx /app/public /usr/share/nginx/html
+
 # Copier la configuration nginx template et le script d'entrypoint
 COPY --chown=nginx:nginx nginx.conf.template /etc/nginx/nginx.conf.template
 COPY --chown=root:root docker-entrypoint.sh /docker-entrypoint.sh
