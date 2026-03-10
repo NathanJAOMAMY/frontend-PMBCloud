@@ -6,7 +6,9 @@ set -e
 # Définir les variables par défaut si non présentes
 export VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001}
 
-echo "Starting nginx with API base URL: $VITE_API_BASE_URL"
+echo "Starting nginx with API base URL: $VITE_API_BASE_URL" && \
+# debug: show connect-src value that will be generated
+printf "# CSP connect-src will include: %s\n" "$VITE_API_BASE_URL"
 
 # Substituer les variables d'environnement dans le template et générer le fichier final
 envsubst '${VITE_API_BASE_URL}' < /etc/nginx/nginx.conf.template > /tmp/nginx.conf
