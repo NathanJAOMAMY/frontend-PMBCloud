@@ -43,6 +43,20 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 
+    <!-- Runtime config injection for environment variables (used by Render with nginx) -->
+    <script>
+      window.__CONFIG__ = {
+        VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || '${VITE_SUPABASE_URL}' || '',
+        VITE_SUPABASE_KEY: import.meta.env.VITE_SUPABASE_KEY || '${VITE_SUPABASE_KEY}' || '',
+        VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL || '${VITE_API_BASE_URL}' || 'https://backend-pmbcloud.onrender.com'
+      };
+      console.log('[index.html] Runtime config:', { 
+        supabaseUrl: window.__CONFIG__.VITE_SUPABASE_URL ? 'set' : 'empty',
+        supabaseKey: window.__CONFIG__.VITE_SUPABASE_KEY ? 'set' : 'empty',
+        apiUrl: window.__CONFIG__.VITE_API_BASE_URL 
+      });
+    </script>
+
      <!-- Register service worker -->
     <script>
       if ('serviceWorker' in navigator) {

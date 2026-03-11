@@ -20,8 +20,22 @@ COPY tsconfig.json ./
 COPY . .
 
 # Variables d'environnement pour le build
+# These ARG values are defaults; Render can override via --build-arg or .env
 ARG VITE_API_BASE_URL=http://localhost:3001
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_KEY
+
+# Set as ENV so they're available during npm run build
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+ENV VITE_SUPABASE_KEY=${VITE_SUPABASE_KEY}
+
+# Create .env.production so Vite can access vars (for safety in build-time substitution)
+RUN echo "Creating .env.production for Vite build..." && \
+    ([ -n "$VITE_API_BASE_URL" ] && echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" || echo "# VITE_API_BASE_URL not set") > .env.production && \
+    ([ -n "$VITE_SUPABASE_URL" ] && echo "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" || echo "# VITE_SUPABASE_URL not set") >> .env.production && \
+    ([ -n "$VITE_SUPABASE_KEY" ] && echo "VITE_SUPABASE_KEY=$VITE_SUPABASE_KEY" || echo "# VITE_SUPABASE_KEY not set") >> .env.production && \
+    echo "--- .env.production content ---" && cat .env.production && echo "---"
 
 # Builder l'application
 RUN npm run build

@@ -10,12 +10,14 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
 
 if (!supabaseUrl || !supabaseKey) {
   // environment variables must be provided at build time (Render, Vite, etc.)
-  // throw instead of silently creating a bad client; the app will crash early
+  // Log error but don't throw - allow app to at least load and show an error message
   const msg = '[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_KEY environment variable';
   console.error(msg);
-  throw new Error(msg);
+  console.error('  VITE_SUPABASE_URL:', supabaseUrl || '(empty)');
+  console.error('  VITE_SUPABASE_KEY:', supabaseKey ? '(set)' : '(empty)');
 }
 
+// Create the client anyway - it may fail at first API call but at least the app can bootstrap
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Fonction utilitaire pour vérifier la connectivité Supabase
