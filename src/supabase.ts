@@ -9,7 +9,11 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''; // intentionally em
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_KEY environment variable');
+  // environment variables must be provided at build time (Render, Vite, etc.)
+  // throw instead of silently creating a bad client; the app will crash early
+  const msg = '[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_KEY environment variable';
+  console.error(msg);
+  throw new Error(msg);
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
