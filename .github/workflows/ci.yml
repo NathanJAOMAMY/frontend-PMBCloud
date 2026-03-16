@@ -98,7 +98,7 @@ jobs:
 
       - name: NPM audit
         run: |
-          npm audit --audit-level=high || echo " Audit completed with warnings"
+          npm audit --audit-level=critical
           if [ -f "package-lock.json" ]; then
             npx npm-audit-html --output audit-report.html || true
           fi

@@ -54,6 +54,7 @@
     "lhci:custom": "npm run build && npm run serve:csp & lhci autorun --config=lighthouserc.json && pkill -f 'node scripts/serve-csp.js'"
   },
   "dependencies": {
+    "lodash": "4.17.4",
     "@emnapi/core": "^1.4.5",
     "@reduxjs/toolkit": "^2.8.2",
     "@supabase/supabase-js": "^2.53.0",
