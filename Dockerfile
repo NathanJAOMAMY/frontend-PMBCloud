@@ -49,7 +49,8 @@ RUN echo "=== Verification: files in dist/ ===" && ls -la dist/ | grep -E "(logo
 RUN find /app/dist -name "*.map" -delete && echo "✓ Source maps removed"
 
 # Stage 2: Production
-FROM nginxinc/nginx-unprivileged:alpine
+# FROM nginxinc/nginx-unprivileged:alpine
+FROM nginx:latest
 
 # Installation de curl et gettext (pour envsubst) en tant que root temporairement
 USER root
@@ -80,7 +81,7 @@ RUN chown -R nginx:nginx /var/cache/nginx && \
 
 # Health check uses the same port the server listens on. If PORT is not set we
 # default to 8080 so local builds still work. Render will provide PORT env var.
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+# HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:${PORT}/health || exit 1
 
 EXPOSE 8080
