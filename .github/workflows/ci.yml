@@ -504,6 +504,7 @@ jobs:
           docker run --rm \
             --network host \
             --user $(id -u):$(id -g) \
+            -w /zap/wrk \
             -v $(pwd):/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
