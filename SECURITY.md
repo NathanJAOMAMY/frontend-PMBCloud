@@ -53,6 +53,27 @@ Si vous découvrez une vulnérabilité de sécurité :
 - Nécessite `SNYK_TOKEN` en secret GitHub
 - Continue-on-error : n'interrompt pas le pipeline si absent
 
+#### g) **Checkov** - Scan Infrastructure-as-Code
+- Analyse les fichiers Dockerfile, `docker-compose.yml` et tout autre IaC
+- Applique des règles via `policy/*.rego` pour détecter les mauvaises pratiques
+- Résultats SARIF (`checkov-results.sarif`) et JSON pour dashboard
+
+#### h) **Conftest/OPA policies**
+- Valide directement le contenu des Dockerfile, nginx.conf et compose
+- S'assure que les directives `USER`, la CSP et autres normes sont respectées
+- Les politiques sont stockées sous `policy/` et exécutées depuis le workflow
+
+#### i) **Falco Runtime Security**
+- Job dédié exécute Falco pendant ~60 s contre un container de test
+- Détecte les comportements systèmes suspects (shells, connexions réseau, etc.)
+- Outil utile en CI; la surveillance continue en production nécessite déployer Falco sur l'hôte
+
+#### j) **Image Signing (Cosign)**
+- Signature keyless de l'image Docker après build
+- Empêche l'usage d'images modifiées dans les déploiements
+- Ce mécanisme est déjà opérationnel dans le workflow (pas seulement futur) ; 
+  une étape de vérification peut être ajoutée au déploiement
+
 ### Dépendances avec Dependabot (`.github/dependabot.yml`)
 - Crée automatiquement des PRs pour mises à jour npm et GitHub Actions
 - Schedule : hebdomadaire (lundi 03:00 UTC)
@@ -67,6 +88,7 @@ Si vous découvrez une vulnérabilité de sécurité :
 ✓ **User non-root** : conteneur run avec user `nginx` (pas root)
 ✓ **Permissions strictes** : fichiers et répertoires owned par nginx
 ✓ **No secrets en clair** : secrets injectés via variables d'environnement uniquement
+✓ **Image signée** : workflows génèrent et publient signature Cosign keyless
 
 ### Configuration Nginx (`nginx.conf`)
 ✓ **Content-Security-Policy (CSP)** : bloque les scripts non-autorisés
@@ -125,7 +147,7 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 - [ ] SBOM généré et archivé
 - [ ] CSP headers appliqués
 - [ ] Pas de secrets dans le code
-- [ ] Image signée (future : cosign)
+- [ ] Image signée (cosign déployé dans le pipeline, vérification à intégrer)
 - [ ] Accès RBAC minimal au conteneur
 
 ## 7. Incidents de Sécurité
@@ -152,5 +174,5 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 
 ---
 
-**Dernière mise à jour** : 6 février 2026  
+**Dernière mise à jour** : 11 mars 2026  
 **Propriétaire** : Équipe DevSecOps
