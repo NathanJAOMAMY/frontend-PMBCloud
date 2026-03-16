@@ -503,6 +503,7 @@ jobs:
           echo "Running ZAP baseline scan..."
           docker run --rm \
             --network host \
+            --user $(id -u):$(id -g) \
             -v $(pwd):/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
