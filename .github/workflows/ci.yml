@@ -197,7 +197,7 @@ jobs:
           mkdir -p conftest-results
           
           conftest test -p policy/dockerfile.rego \
-            -o json Dockerfile > conftest-results/dockerfile-results.json || true
+            -o json Dockerfile > conftest-results/dockerfile-results.json 
           
           echo "✓ Dockerfile policy check completed"
 
@@ -205,7 +205,7 @@ jobs:
         run: |
           echo "Testing docker-compose.yml with OPA policies..."
           conftest test -p policy/docker_compose.rego \
-            -o json docker-compose.yml > conftest-results/compose-results.json || true
+            -o json docker-compose.yml > conftest-results/compose-results.json 
           
           echo "✓ docker-compose.yml policy check completed"
 
@@ -213,7 +213,7 @@ jobs:
         run: |
           echo "Testing nginx.conf with OPA policies..."
           conftest test -p policy/nginx.rego \
-            -o json nginx.conf > conftest-results/nginx-results.json || true
+            -o json nginx.conf > conftest-results/nginx-results.json 
           
           echo "✓ nginx.conf policy check completed"
 
