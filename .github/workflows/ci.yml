@@ -505,6 +505,8 @@ jobs:
             --network host \
             --user $(id -u):$(id -g) \
             -w /zap/wrk \
+            -e HOME=/zap/wrk \
+            -e ZAP_OUTPUT_DIR=/zap/wrk \
             -v $(pwd):/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
