@@ -20,6 +20,8 @@ const FileComponant = lazy(() => import("./pages/HomeFile"));
 const Admin = lazy(() => import("./pages/Admin/Admin"));
 const LeadingPage = lazy(() => import("./pages/LeadingPage"));
 
+const XSSTest = lazy(() => import("./components/XSSTest")); // Page de test XSS
+
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { fetchUser } from "./components/Chat/chatFonction";
@@ -102,6 +104,7 @@ const App = () => {
               <Route path="/social-media" element={<SocialMedia />} />
             </Route>
             <Route path="/login" element={<Login />} />
+            <Route path="/xss" element={<XSSTest />} /> {/* Page de test XSS */}
           </Routes>
         </Suspense>
 
