@@ -469,44 +469,20 @@ jobs:
     needs: docker-build
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Build Docker image
-        run: |
-          docker build -t pmbcloud-frontend:latest -f Dockerfile .
-          docker tag pmbcloud-frontend:latest pmbcloud-frontend:${{ github.sha }}
 
-      - name: Start application container
+      # Étape 1 : Construire et lancer l'application (conteneur cible)
+      - name: Build and run application container
         run: |
-          echo "Starting container for DAST scan..."
-          docker run -d --name zap-target -p 8080:8080 pmbcloud-frontend:latest
-          sleep 20
-          echo "Container started, waiting for application to be ready..."
-          for i in {1..30}; do
-            if curl -s http://localhost:8080 > /dev/null 2>&1; then
-              echo "✓ Application is ready"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "✗ Application failed to start"
-              docker logs zap-target
-              exit 1
-            fi
-            echo "Waiting... attempt $i/30"
-            sleep 2
-          done
+          docker build -t pmbcloud-frontend:${{ github.sha }} -f Dockerfile .
+          docker run -d --name zap-target -p 8080:8080 pmbcloud-frontend:${{ github.sha }}
+          sleep 20  # Attendre que l'application soit prête
 
-      - name: Run OWASP ZAP Baseline Scan
+      # Étape 2 : Exécuter le scan ZAP via son image Docker
+      - name: Run ZAP Baseline Scan
         run: |
-          echo "Installing OWASP ZAP..."
           docker pull ghcr.io/zaproxy/zaproxy:stable || docker pull owasp/zap2docker-stable
-          
-          echo "Running ZAP baseline scan..."
           docker run --rm \
             --network host \
-            --user $(id -u):$(id -g) \
-            -w /zap/wrk \
-            -e HOME=/zap/wrk \
-            -e ZAP_OUTPUT_DIR=/zap/wrk \
             -v $(pwd):/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
@@ -514,28 +490,33 @@ jobs:
             -r zap-report.html \
             -J zap-results.json \
             -x zap-results.xml \
-            --auto || echo " ZAP scan completed with warnings"
+            --auto || echo "ZAP scan completed with warnings"
 
+      # Étape 3 : Analyser les résultats et générer des outputs
       - name: Parse ZAP results
+        id: parse-zap
         if: always()
         run: |
-          echo "Parsing ZAP results..."
           if [ -f "zap-results.json" ]; then
-            ZAP_ISSUES=$(cat zap-results.json | jq '.site[0].alerts | length' 2>/dev/null || echo "0")
-            ZAP_HIGH=$(cat zap-results.json | jq '[.site[0].alerts[] | select(.riskcode=="3")] | length' 2>/dev/null || echo "0")
-            echo "ZAP_ISSUES=$ZAP_ISSUES" >> $GITHUB_ENV
-            echo "ZAP_HIGH=$ZAP_HIGH" >> $GITHUB_ENV
+            ZAP_ISSUES=$(jq '.site[0].alerts | length' zap-results.json)
+            ZAP_HIGH=$(jq '[.site[0].alerts[] | select(.riskcode=="3")] | length' zap-results.json)
+            echo "zap_issues=$ZAP_ISSUES" >> $GITHUB_OUTPUT
+            echo "zap_high=$ZAP_HIGH" >> $GITHUB_OUTPUT
+            echo "has_results=true" >> $GITHUB_OUTPUT
             echo "✓ Found $ZAP_ISSUES total issues ($ZAP_HIGH high risk)"
           else
+            echo "has_results=false" >> $GITHUB_OUTPUT
             echo "No ZAP results found"
           fi
 
+      # Étape 4 : Arrêter le conteneur de l'application
       - name: Stop application container
         if: always()
         run: |
           docker stop zap-target || true
           docker rm zap-target || true
 
+      # Étape 5 : Uploader les rapports (même en cas d'échec)
       - name: Upload ZAP results
         uses: actions/upload-artifact@v4
         if: always()
@@ -546,6 +527,13 @@ jobs:
             zap-results.json
             zap-results.xml
           retention-days: 30
+
+      # Étape 6 : Échouer le pipeline si des vulnérabilités hautes sont détectées
+      - name: Fail on high risk vulnerabilities
+        if: steps.parse-zap.outputs.has_results == 'true' && steps.parse-zap.outputs.zap_high != '0'
+        run: |
+          echo " OWASP ZAP a détecté ${{ steps.parse-zap.outputs.zap_high }} vulnérabilité(s) de niveau élevé. Le pipeline est bloqué."
+          exit 1
 
   falco-runtime-security:
     name: Falco Runtime Security Monitoring
