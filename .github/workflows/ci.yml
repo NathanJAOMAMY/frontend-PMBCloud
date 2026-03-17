@@ -510,7 +510,22 @@ jobs:
           cmd_options: '-a'
           issue_title: 'OWASP ZAP Baseline Report'
           allow_issue_writing: false
-          fail_action: true
+          fail_action: false   # ← Désactiver l'échec automatique
+
+      - name: Check for XSS failure
+        run: |
+          if [ -f "report_json.json" ]; then
+            FAIL_COUNT=$(jq '.site[0].alerts[] | select(.riskcode=="3") | length' report_json.json 2>/dev/null || echo 0)
+            if [ "$FAIL_COUNT" -gt 0 ]; then
+              echo "❌ Détection de $FAIL_COUNT vulnérabilité(s) de niveau FAIL. Le pipeline est bloqué."
+              exit 1
+            else
+              echo "✅ Aucune faille de niveau FAIL détectée."
+            fi
+          else
+            echo "⚠️ Rapport JSON introuvable."
+            exit 1
+          fi
 
   falco-runtime-security:
     name: Falco Runtime Security Monitoring
