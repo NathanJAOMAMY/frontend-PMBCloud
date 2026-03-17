@@ -479,23 +479,28 @@ jobs:
       - name: Verify application is reachable
         run: curl --fail --max-time 30 http://localhost:8080 || exit 1
 
-      # Plus besoin de 'chmod 777' car on va exécuter ZAP en root
-      # - name: Fix permissions for ZAP
-      #   run: chmod 777 $(pwd)
-
-      - name: Run ZAP Baseline Scan
+      - name: Run ZAP Baseline Scan (with output capture)
         run: |
           docker pull ghcr.io/zaproxy/zaproxy:stable || docker pull owasp/zap2docker-stable
-          docker run --rm \
+          
+          # Créer un conteneur temporaire avec un nom
+          docker run --name zap-scan \
             --network host \
-            -v $(pwd):/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
             -t http://localhost:8080 \
-            -r zap-report.html \
-            -J zap-results.json \
-            -x zap-results.xml \
-            --auto
+            -r /zap/wrk/zap-report.html \
+            -J /zap/wrk/zap-results.json \
+            -x /zap/wrk/zap-results.xml \
+            --auto || true
+          
+          # Copier les fichiers du conteneur vers l'espace de travail
+          docker cp zap-scan:/zap/wrk/zap-report.html ./zap-report.html 2>/dev/null || true
+          docker cp zap-scan:/zap/wrk/zap-results.json ./zap-results.json 2>/dev/null || true
+          docker cp zap-scan:/zap/wrk/zap-results.xml ./zap-results.xml 2>/dev/null || true
+          
+          # Nettoyer le conteneur
+          docker rm zap-scan
 
       - name: Parse ZAP results
         id: parse-zap
