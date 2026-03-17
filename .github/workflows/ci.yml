@@ -479,18 +479,15 @@ jobs:
       - name: Verify application is reachable
         run: curl --fail --max-time 30 http://localhost:8080 || exit 1
 
-      # 🔐 Correction des permissions pour permettre l'écriture par l'utilisateur non-root du conteneur ZAP
-      - name: Fix permissions for ZAP
-        run: chmod 777 $(pwd)
+      # Plus besoin de 'chmod 777' car on va exécuter ZAP en root
+      # - name: Fix permissions for ZAP
+      #   run: chmod 777 $(pwd)
 
       - name: Run ZAP Baseline Scan
         run: |
           docker pull ghcr.io/zaproxy/zaproxy:stable || docker pull owasp/zap2docker-stable
           docker run --rm \
             --network host \
-            --user $(id -u):$(id -g) \
-            -w /zap/wrk \
-            -e HOME=/zap/wrk \
             -v $(pwd):/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
