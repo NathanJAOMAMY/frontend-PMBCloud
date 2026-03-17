@@ -71,14 +71,6 @@ const LandingPage = () => {
             link="/social-media"
           />
         </section>
-
-        {/* Lien de test pour ZAP (à supprimer après validation) */}
-        <div className="mt-4">
-          <a href="/xss" className="text-xs text-gray-400 underline">
-            Lien de test XSS (ne pas cliquer)
-          </a>
-        </div>
-
       </main>
 
       {/* Footer */}
