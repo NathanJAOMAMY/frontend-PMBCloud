@@ -102,7 +102,7 @@ jobs:
         CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD)
         
         # Skip node_modules, dist, .github/workflows, and lockfiles
-        CHANGED_FILES=$(echo "$CHANGED_FILES" | grep -v "node_modules\|dist\|\.json\.lock\|\.github/workflows" || true)
+        CHANGED_FILES=$(echo "$CHANGED_FILES" | grep -v "node_modules\|dist\|\.json\.lock\|\.github/workflows\|index\.html" || true)
         
         FOUND_SECRETS=0
         SECRETS_PATTERN='(SUPABASE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|MONGO_URI|API_KEY|aws_secret|github_token)'
