@@ -6,6 +6,12 @@
 </head>
 <body>
     <h1>Test XSS (vulnérable)</h1>
-    <script>alert('XSS')</script>
+    <div id="output"></div>
+    <script>
+        // Récupère le paramètre 'msg' de l'URL et l'affiche sans échappement
+        const urlParams = new URLSearchParams(window.location.search);
+        const msg = urlParams.get('msg') || 'pas de message';
+        document.getElementById('output').innerHTML = msg;
+    </script>
 </body>
 </html>
