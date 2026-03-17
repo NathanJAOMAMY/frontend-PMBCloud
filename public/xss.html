@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>XSS Test</title>
+</head>
+<body>
+    <h1>Test XSS (vulnérable)</h1>
+    <div id="xss">
+        <img src=x onerror=alert(1)>
+    </div>
+</body>
+</html>
