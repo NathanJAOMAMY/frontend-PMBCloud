@@ -6,8 +6,6 @@
 </head>
 <body>
     <h1>Test XSS (vulnérable)</h1>
-    <div id="xss">
-        <img src=x onerror=alert(1)>
-    </div>
+    <script>alert('XSS')</script>
 </body>
 </html>
