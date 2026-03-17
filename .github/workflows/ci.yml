@@ -471,11 +471,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build and run application container
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build and load Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          tags: pmbcloud-frontend:${{ github.sha }}
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
+
+      - name: Run application container
         run: |
-          docker build -t pmbcloud-frontend:${{ github.sha }} -f Dockerfile .
           docker run -d --name zap-target -p 8080:8080 pmbcloud-frontend:${{ github.sha }}
-          sleep 20
+          sleep 30
 
       - name: Verify application is reachable
         run: curl --fail --max-time 30 http://localhost:8080 || exit 1
