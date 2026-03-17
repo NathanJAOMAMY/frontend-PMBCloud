@@ -476,10 +476,12 @@ jobs:
           docker run -d --name zap-target -p 8080:8080 pmbcloud-frontend:${{ github.sha }}
           sleep 20
 
-      # Vérifier que l'application répond avant de lancer ZAP
       - name: Verify application is reachable
-        run: |
-          curl --fail --max-time 30 http://localhost:8080 || exit 1
+        run: curl --fail --max-time 30 http://localhost:8080 || exit 1
+
+      # 🔐 Correction des permissions pour permettre l'écriture par l'utilisateur non-root du conteneur ZAP
+      - name: Fix permissions for ZAP
+        run: chmod 777 $(pwd)
 
       - name: Run ZAP Baseline Scan
         run: |
@@ -497,7 +499,6 @@ jobs:
             -J zap-results.json \
             -x zap-results.xml \
             --auto
-        # Le '|| echo' a été supprimé pour que l'erreur soit visible et fasse échouer le job
 
       - name: Parse ZAP results
         id: parse-zap
