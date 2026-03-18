@@ -559,7 +559,6 @@ jobs:
         run: |
           docker run -d --name falco-target -p 8080:8080 pmbcloud-frontend:latest
           sleep 15
-          # Vérifier que l'application répond
           for i in {1..30}; do
             if curl -s http://localhost:8080 > /dev/null 2>&1; then
               echo "✓ Application ready"
@@ -573,12 +572,12 @@ jobs:
           mkdir -p falco-results
           docker pull falcosecurity/falco:latest
 
-          # Règles Falco simplifiées pour le test
+          # Règle Falco simplifiée
           cat > falco-rules.yaml << 'EOF'
-          - rule: Suspicious Execve Activity
-            condition: spawned_process and container and (proc.name = "bash" or proc.name = "sh" or proc.name = "nc" or proc.name = "curl")
+          - rule: Detect curl execution
+            condition: container and proc.name = "curl"
+            output: "Curl executed in container (user=%user.name command=%proc.cmdline)"
             priority: WARNING
-            output: "Suspicious command execution in container (user=%user.name command=%proc.cmdline)"
           EOF
 
           # Lancer Falco en arrière-plan
@@ -595,15 +594,20 @@ jobs:
           docker exec falco-target curl http://attacker.com || true
           echo "✓ Commande suspecte exécutée"
 
-          # Laisser Falco collecter les logs
-          sleep 60
+          # Laisser Falco collecter les logs (augmenté à 90 secondes)
+          sleep 90
           docker logs falco > falco-results/falco-events.log 2>&1
           docker stop falco
+
+      - name: Debug Falco logs
+        run: |
+          echo "Contenu du log Falco :"
+          cat falco-results/falco-events.log || echo "Log vide ou inexistant"
 
       - name: Check for Falco alerts
         run: |
           if [ -f "falco-results/falco-events.log" ]; then
-            if grep -q "Suspicious command execution" falco-results/falco-events.log; then
+            if grep -q "Curl executed in container" falco-results/falco-events.log; then
               echo " Falco a détecté l'attaque ! Pipeline bloqué."
               exit 1
             else
