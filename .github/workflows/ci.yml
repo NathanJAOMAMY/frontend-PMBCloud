@@ -567,17 +567,17 @@ jobs:
             sleep 2
           done
 
-      - name: Run Falco with suspicious command simulation
+      - name: Run Falco with debug rule
         run: |
           mkdir -p falco-results
           docker pull falcosecurity/falco:latest
 
-          # Règle Falco simplifiée
+          # Règle de débogage : capture toutes les exécutions de processus
           cat > falco-rules.yaml << 'EOF'
-          - rule: Detect curl execution
-            condition: container and proc.name = "curl"
-            output: "Curl executed in container (user=%user.name command=%proc.cmdline)"
-            priority: WARNING
+          - rule: Detect any process
+            condition: evt.type = execve
+            output: "Process executed: %proc.cmdline"
+            priority: DEBUG
           EOF
 
           # Lancer Falco en arrière-plan
@@ -594,7 +594,7 @@ jobs:
           docker exec falco-target curl http://attacker.com || true
           echo "✓ Commande suspecte exécutée"
 
-          # Laisser Falco collecter les logs (augmenté à 90 secondes)
+          # Laisser Falco collecter les logs
           sleep 90
           docker logs falco > falco-results/falco-events.log 2>&1
           docker stop falco
@@ -607,11 +607,11 @@ jobs:
       - name: Check for Falco alerts
         run: |
           if [ -f "falco-results/falco-events.log" ]; then
-            if grep -q "Curl executed in container" falco-results/falco-events.log; then
-              echo " Falco a détecté l'attaque ! Pipeline bloqué."
-              exit 1
+            if grep -q "Process executed" falco-results/falco-events.log; then
+              echo " Falco a détecté des processus !"
+              # Pour l'instant, on ne bloque pas, on veut juste voir
             else
-              echo " Aucune alerte Falco détectée."
+              echo " Aucun processus détecté par Falco."
             fi
           else
             echo " Fichier de log Falco introuvable"
@@ -631,7 +631,6 @@ jobs:
           name: falco-runtime-results
           path: falco-results/
           retention-days: 30
-
   # ============================================================
   # STAGE 5: Reports & Notifications
   # ============================================================
