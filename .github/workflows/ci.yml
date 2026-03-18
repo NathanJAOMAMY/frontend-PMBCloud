@@ -567,27 +567,33 @@ jobs:
             sleep 2
           done
 
-      - name: Run Falco with debug rule
+      - name: Run Falco with debug
         run: |
           mkdir -p falco-results
           docker pull falcosecurity/falco:latest
 
-          # Règle de débogage : capture toutes les exécutions de processus
+          # Règle très large pour capturer tout execve
           cat > falco-rules.yaml << 'EOF'
-          - rule: Detect any process
+          - rule: Detect any execve
             condition: evt.type = execve
-            output: "Process executed: %proc.cmdline"
+            output: "Execve detected: %proc.cmdline"
             priority: DEBUG
           EOF
 
-          # Lancer Falco en arrière-plan
+          # Lancer Falco avec logs détaillés
           docker run -d --name falco --privileged \
             -v /var/run/docker.sock:/host/var/run/docker.sock \
             -v /proc:/host/proc:ro \
             -v $(pwd)/falco-rules.yaml:/etc/falco/rules.yaml \
-            falcosecurity/falco:latest
+            falcosecurity/falco:latest \
+            -o json_output=false \
+            -o log_level=debug
           sleep 10
           echo "✓ Falco started"
+
+          # Vérifier que la règle est chargée
+          echo "=== Règles Falco chargées ==="
+          docker exec falco cat /etc/falco/rules.yaml
 
           # SIMULATION DE L'ATTAQUE
           echo " Simulation d'une attaque : exécution de curl vers attacker.com..."
@@ -601,17 +607,18 @@ jobs:
 
       - name: Debug Falco logs
         run: |
-          echo "Contenu du log Falco :"
+          echo "=== Contenu du log Falco ==="
           cat falco-results/falco-events.log || echo "Log vide ou inexistant"
+          echo "=== Fin du log ==="
 
       - name: Check for Falco alerts
         run: |
           if [ -f "falco-results/falco-events.log" ]; then
-            if grep -q "Process executed" falco-results/falco-events.log; then
-              echo " Falco a détecté des processus !"
-              # Pour l'instant, on ne bloque pas, on veut juste voir
+            if grep -q "Execve detected" falco-results/falco-events.log; then
+              echo " Falco a détecté l'attaque ! Pipeline bloqué."
+              exit 1
             else
-              echo " Aucun processus détecté par Falco."
+              echo " Aucune alerte Falco détectée."
             fi
           else
             echo " Fichier de log Falco introuvable"
