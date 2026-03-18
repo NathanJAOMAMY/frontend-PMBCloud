@@ -595,10 +595,17 @@ jobs:
           echo "=== Règles Falco chargées ==="
           docker exec falco cat /etc/falco/rules.yaml
 
+          # Lister les conteneurs visibles par Falco (optionnel)
+          echo "=== Conteneurs visibles ==="
+          docker exec falco ps aux | grep falco || true
+
           # SIMULATION DE L'ATTAQUE
           echo " Simulation d'une attaque : exécution de curl vers attacker.com..."
           docker exec falco-target curl http://attacker.com || true
           echo "✓ Commande suspecte exécutée"
+
+          # Exécuter une commande supplémentaire pour tester
+          docker exec falco-target ls -l / > /dev/null || true
 
           # Laisser Falco collecter les logs
           sleep 90
